@@ -1,0 +1,1 @@
+{"id":"intake-s13-3","flow":"intake","threshold":0.95,"passed":true,"sourceOnly":true,"note":"Source is a distinct FINEOS GDC wrap-up screen not modelled beyond the confirmation summary.","ratio":0.9279802469135803,"diffPixels":1315412,"comparedWidth":1500,"comparedHeight":945}

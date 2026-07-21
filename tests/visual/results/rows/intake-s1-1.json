@@ -1,0 +1,1 @@
+{"id":"intake-s1-1","flow":"intake","threshold":0.9,"passed":true,"sourceOnly":false,"note":"Search dialog over the dashboard, above browser chrome; backdrop-dominated.","ratio":0.5745989869143099,"diffPixels":816735,"comparedWidth":1545,"comparedHeight":920}

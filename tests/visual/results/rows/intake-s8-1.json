@@ -1,0 +1,1 @@
+{"id":"intake-s8-1","flow":"intake","threshold":0.85,"passed":true,"sourceOnly":true,"note":"Source shows an OS-drawn native <select> popup that cannot be captured in-DOM; the closed field is compared.","ratio":0.20538694885361553,"diffPixels":291136,"comparedWidth":1500,"comparedHeight":945}

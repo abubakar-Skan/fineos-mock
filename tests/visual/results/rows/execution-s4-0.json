@@ -1,0 +1,1 @@
+{"id":"execution-s4-0","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":true,"note":"Source is the QuestionPathClaim eForm viewer; mock shows the Documents tab it opens from.","ratio":0.15049114116974663,"diffPixels":197482,"comparedWidth":1450,"comparedHeight":905}

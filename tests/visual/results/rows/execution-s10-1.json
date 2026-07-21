@@ -1,0 +1,1 @@
+{"id":"execution-s10-1","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source has a screen-recording capture border and video-call overlay.","ratio":0.20036807010859212,"diffPixels":262933,"comparedWidth":1450,"comparedHeight":905}

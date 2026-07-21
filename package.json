@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:visual": "echo 'test:visual will be implemented in a later task' && exit 1",
+    "test:visual": "playwright test --config playwright.visual.config.ts",
     "db:reset": "node --eval \"import('./apps/api/src/infrastructure/database.ts').then((m) => m.resetToSeededFile())\""
   },
   "devDependencies": {
