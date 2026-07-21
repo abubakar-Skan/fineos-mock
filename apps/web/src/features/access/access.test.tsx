@@ -134,14 +134,18 @@ describe("Primary navigation", () => {
     expect(await screen.findByRole("heading", { name: /dashboard/i })).toBeTruthy();
   });
 
-  it("navigates Parties to the seeded party context", async () => {
+  it("opens Case Search on the Party tab from Parties instead of routing to a party record", async () => {
     await useNavigation(/parties/i);
-    expect(await screen.findByRole("heading", { name: /david hunter/i })).toBeTruthy();
+    const dialog = screen.getByRole("dialog", { name: /case search/i });
+    expect(within(dialog).getByRole("tab", { name: /party/i }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByRole("heading", { name: /david hunter/i })).toBeNull();
   });
 
-  it("navigates Cases to the existing Master Plan context", async () => {
+  it("opens Case Search on the Case tab from Cases instead of routing to the Master Plan", async () => {
     await useNavigation(/cases/i);
-    expect(await screen.findByRole("heading", { name: /master plan 18489/i })).toBeTruthy();
+    const dialog = screen.getByRole("dialog", { name: /case search/i });
+    expect(within(dialog).getByRole("tab", { name: /^case$/i }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByRole("heading", { name: /master plan 18489/i })).toBeNull();
   });
 
   it("shows an in-shell notice for Work Queues", async () => {

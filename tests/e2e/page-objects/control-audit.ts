@@ -154,8 +154,8 @@ const auditNavigation = async (page: Page): Promise<void> => {
 
 const exerciseNavigationLinks = async (page: Page): Promise<void> => {
   await clickNav(page, "Home", /\/dashboard$/);
-  await clickNav(page, "Parties", /\/parties\/PTY-80937$/);
-  await clickNav(page, "Cases", /\/master-plans\/18489\/members$/);
+  await openSearchFromNav(page, "Parties", "Party");
+  await openSearchFromNav(page, "Cases", "Case");
 };
 
 const clickNav = async (page: Page, name: string, url: RegExp): Promise<void> => {
@@ -163,6 +163,20 @@ const clickNav = async (page: Page, name: string, url: RegExp): Promise<void> =>
   await page.getByRole("navigation", { name: "Primary" })
     .getByRole("button", { name, exact: true }).click();
   await expect(page).toHaveURL(url);
+};
+
+// The Parties/Cases icons open Case Search on the matching tab rather than
+// jumping straight to a party or master-plan record; the shell URL stays put.
+const openSearchFromNav = async (page: Page, name: string, tab: string): Promise<void> => {
+  await openDashboard(page);
+  await page.getByRole("navigation", { name: "Primary" })
+    .getByRole("button", { name, exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Case Search" });
+  await expect(dialog.getByRole("tab", { name: tab, exact: true }))
+    .toHaveAttribute("aria-selected", "true");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
 };
 
 const exerciseUnsupportedNavigation = async (page: Page): Promise<void> => {
@@ -245,9 +259,20 @@ const PARTY_SEARCH = [
   control("button", "Search"),
 ] as const;
 
+// Every recent row is a semantic button that opens its own case record, routed
+// by the case-id suffix: notifications → general, absence → absence-hub.
 const RECENT_RESULTS = [
-  { name: "Notification - NTN-159898 — David Hunter", url: /\/parties\/PTY-77569$/ },
-  { name: "Notification - NTN-165775 — Erica Alexander", url: /\/parties\/PTY-80937$/ },
+  { name: "Notification - NTN-159898", url: /\/cases\/NTN-159898\/general$/ },
+  { name: "Absence Case - NTN-162642-ABS-01", url: /\/cases\/NTN-162642-ABS-01\/absence-hub$/ },
+  { name: "Notification - NTN-162642", url: /\/cases\/NTN-162642\/general$/ },
+  { name: "Notification - NTN-162641", url: /\/cases\/NTN-162641\/general$/ },
+  { name: "Absence Case - NTN-162641-ABS-01", url: /\/cases\/NTN-162641-ABS-01\/absence-hub$/ },
+  { name: "Absence Case - NTN-160306-ABS-01", url: /\/cases\/NTN-160306-ABS-01\/absence-hub$/ },
+  { name: "Notification - NTN-160306", url: /\/cases\/NTN-160306\/general$/ },
+  { name: "Notification - NTN-159901", url: /\/cases\/NTN-159901\/general$/ },
+  { name: "Absence Case - NTN-159901-ABS-01", url: /\/cases\/NTN-159901-ABS-01\/absence-hub$/ },
+  { name: "Absence Case - NTN-148123-ABS-01", url: /\/cases\/NTN-148123-ABS-01\/absence-hub$/ },
+  { name: "Notification - NTN-165775", url: /\/cases\/NTN-165775\/general$/ },
 ] as const;
 
 const RECENT_SEARCH = [
@@ -400,8 +425,8 @@ const auditRecentSearch = async (page: Page): Promise<void> => {
   const dialog = await openSearch(page);
   await dialog.getByRole("tab", { name: "Recent" }).click();
   await assertInventory(dialog, RECENT_SEARCH);
-  await dialog.getByRole("button", { name: "Notification - NTN-159898 — David Hunter" }).click();
-  await expect(page).toHaveURL(/\/parties\/PTY-77569$/);
+  await dialog.getByRole("button", { name: "Notification - NTN-159898", exact: true }).click();
+  await expect(page).toHaveURL(/\/cases\/NTN-159898\/general$/);
   await exerciseDialogDismissals(page);
 };
 

@@ -3,10 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { SearchDialog } from "../../features/search/SearchDialog";
 import { Icon, type IconName } from "./Icon";
 
+// Parties/Cases open Case Search on the matching tab rather than jumping to a
+// specific seeded record; Home routes; the rest are unsupported in this mock.
 const NAV_ITEMS = [
   { key: "home", label: "Home", icon: "home", to: "/dashboard" },
-  { key: "parties", label: "Parties", icon: "parties", to: "/parties/PTY-80937" },
-  { key: "cases", label: "Cases", icon: "cases", to: "/master-plans/18489/members" },
+  { key: "parties", label: "Parties", icon: "parties", searchTab: "Party" },
+  { key: "cases", label: "Cases", icon: "cases", searchTab: "Case" },
   { key: "queues", label: "Work Queues", icon: "queues" },
   { key: "tasks", label: "Tasks", icon: "tasks" },
   { key: "library", label: "Library", icon: "library" },
@@ -15,27 +17,28 @@ const NAV_ITEMS = [
 type NavItem = (typeof NAV_ITEMS)[number];
 
 export function AppShell({ children }: { readonly children: ReactNode }) {
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTab, setSearchTab] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const { search } = useLocation();
   return (
     <div className="fx-app">
-      <ProductHeader onSearch={() => setSearchOpen(true)} />
-      <AppBody notice={notice} onUnsupported={(label) => setNotice(`${label} is not available in this mock.`)}>{children}</AppBody>
+      <ProductHeader onSearch={() => setSearchTab("Case")} />
+      <AppBody notice={notice} onSearch={setSearchTab} onUnsupported={(label) => setNotice(`${label} is not available in this mock.`)}>{children}</AppBody>
       <ShellFooter />
-      {searchOpen && <SearchDialog popup={new URLSearchParams(search).get("search") === "popup"} onClose={() => setSearchOpen(false)} />}
+      {searchTab && <SearchDialog initialTab={searchTab} popup={new URLSearchParams(search).get("search") === "popup"} onClose={() => setSearchTab(null)} />}
     </div>
   );
 }
 
 interface AppBodyProps {
   readonly notice: string | null;
+  readonly onSearch: (tab: string) => void;
   readonly onUnsupported: (label: string) => void;
   readonly children: ReactNode;
 }
 
-function AppBody({ notice, onUnsupported, children }: AppBodyProps) {
-  return <div className="fx-body"><SideNav onUnsupported={onUnsupported} />
+function AppBody({ notice, onSearch, onUnsupported, children }: AppBodyProps) {
+  return <div className="fx-body"><SideNav onSearch={onSearch} onUnsupported={onUnsupported} />
     <main className="fx-content">{notice && <ShellNotice message={notice} />}{children}</main>
   </div>;
 }
@@ -99,14 +102,14 @@ function LanguageSelect() {
   );
 }
 
-function SideNav({ onUnsupported }: { readonly onUnsupported: (label: string) => void }) {
+function SideNav({ onSearch, onUnsupported }: { readonly onSearch: (tab: string) => void; readonly onUnsupported: (label: string) => void }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const active = activeNav(pathname);
   return (
     <nav className="fx-sidenav" aria-label="Primary">
       {NAV_ITEMS.map((item) => (
-        <NavIcon key={item.key} item={item} active={active === item.key} onSelect={() => selectNav(item, navigate, onUnsupported)} />
+        <NavIcon key={item.key} item={item} active={active === item.key} onSelect={() => selectNav(item, navigate, onSearch, onUnsupported)} />
       ))}
     </nav>
   );
@@ -119,8 +122,9 @@ const activeNav = (pathname: string): string | undefined => {
   return undefined;
 };
 
-const selectNav = (item: NavItem, navigate: (to: string) => void, unsupported: (label: string) => void): void => {
+const selectNav = (item: NavItem, navigate: (to: string) => void, onSearch: (tab: string) => void, unsupported: (label: string) => void): void => {
   if ("to" in item && item.to) navigate(item.to);
+  else if ("searchTab" in item && item.searchTab) onSearch(item.searchTab);
   else unsupported(item.label);
 };
 

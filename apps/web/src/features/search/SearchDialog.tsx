@@ -2,9 +2,12 @@ import { useId, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog } from "../../components/fineos/Dialog";
 import { TabBar, tabId } from "../../components/fineos/RecordShell";
+import { caseKind, defaultTab, tabSlug } from "../cases/case-tabs";
 import { searchCases, searchParties, type CaseSummaryView, type PartyView } from "../../app/api";
 
 const SEARCH_TABS = ["Case", "Party", "Recent"] as const;
+
+const MASTER_PLAN_ROUTE = "/master-plans/18489/members";
 
 type SearchRow = CaseSummaryView & { readonly route?: string };
 
@@ -13,11 +16,11 @@ const MASTER_PLAN: SearchRow = {
   partyName: "Fifth Third Bank National Association",
   scope: { kind: "master_plan" },
   status: "Open",
-  route: "/master-plans/18489/members",
+  route: MASTER_PLAN_ROUTE,
 };
 
-export function SearchDialog({ onClose, popup = false }: { readonly onClose: () => void; readonly popup?: boolean }) {
-  const [tab, setTab] = useState<string>("Case");
+export function SearchDialog({ onClose, popup = false, initialTab = "Case" }: { readonly onClose: () => void; readonly popup?: boolean; readonly initialTab?: string }) {
+  const [tab, setTab] = useState<string>(initialTab);
   const tabsId = useId();
   const panelId = `${tabsId}-panel`;
   return (
@@ -120,24 +123,22 @@ const openParty = (id: string, navigate: (to: string) => void, onPick: () => voi
   navigate(`/parties/${id}`);
 };
 
-interface ResultNav {
-  readonly name: string;
-  readonly to: string;
-}
-
 interface ResultRow {
   readonly caseId: string;
   readonly label: string;
   readonly description: string;
   readonly party: string;
-  readonly nav?: ResultNav;
+  readonly route?: string;
 }
 
-// The two navigable rows preserve the recent-search behaviour the E2E control
-// audit asserts (navigate to the party record); the remaining rows reproduce the
-// FINEOS recent-results table visually as non-interactive reference content.
+// Each row opens its own record: the Master Plan row carries an explicit route;
+// every other row is routed by its case-id suffix (notification → general,
+// absence → absence-hub, GDC → claim-hub) via the shared case-tabs helpers.
+const rowRoute = (row: ResultRow): string =>
+  row.route ?? `/cases/${row.caseId}/${tabSlug(defaultTab(caseKind(row.caseId)))}`;
+
 const RECENT_RESULTS: readonly ResultRow[] = [
-  { caseId: "NTN-159898", label: "Notification - NTN-159898", description: "", party: "David Hunter", nav: { name: "Notification - NTN-159898 — David Hunter", to: "/parties/PTY-77569" } },
+  { caseId: "NTN-159898", label: "Notification - NTN-159898", description: "", party: "David Hunter" },
   { caseId: "NTN-162642-ABS-01", label: "Absence Case - NTN-162642-ABS-01", description: "Pregnancy/Maternity | Birth Disability : 01/22/2026-07/26/2026, Intermittent", party: "Anthony Ellis" },
   { caseId: "NTN-162642", label: "Notification - NTN-162642", description: "", party: "Anthony Ellis" },
   { caseId: "NTN-162641", label: "Notification - NTN-162641", description: "", party: "Anthony Ellis" },
@@ -147,7 +148,7 @@ const RECENT_RESULTS: readonly ResultRow[] = [
   { caseId: "NTN-159901", label: "Notification - NTN-159901", description: "", party: "David Hunter" },
   { caseId: "NTN-159901-ABS-01", label: "Absence Case - NTN-159901-ABS-01", description: "Pregnancy/Maternity | Birth Disability : 01/02/2026-02/24/2026, Continuous", party: "David Hunter" },
   { caseId: "NTN-148123-ABS-01", label: "Absence Case - NTN-148123-ABS-01", description: "Serious Health Condition - Employee | Not Work Related : 11/02/2025 (Status: Known, Pattern: Continuous)", party: "EDNA TIERTEST1" },
-  { caseId: "NTN-165775", label: "Notification - NTN-165775", description: "", party: "Erica Alexander", nav: { name: "Notification - NTN-165775 — Erica Alexander", to: "/parties/PTY-80937" } },
+  { caseId: "NTN-165775", label: "Notification - NTN-165775", description: "", party: "Erica Alexander" },
 ];
 
 const INTAKE_RESULTS: readonly ResultRow[] = [
@@ -156,7 +157,7 @@ const INTAKE_RESULTS: readonly ResultRow[] = [
   { caseId: "NTN-165773", label: "Notification - NTN-165773", description: "Sickness, treatment required for a medical condition or any other medical procedure", party: "Zachary Alexander" },
   { caseId: "NTN-165772-ABS-01", label: "Absence Case - NTN-165772-ABS-01", description: "Serious Health Condition - Employee | Not Work Related | Sickness : 04/01/2026-06/01/2026 (Status: Not Known, Pattern: Continuous)", party: "Beth Alexander" },
   { caseId: "NTN-165772-GDC-02", label: "Group Disability Claim - NTN-165772-GDC-02", description: "Sickness : 04/01/2026", party: "Beth Alexander" },
-  { caseId: "18489", label: "Master Plan - 18489", description: "", party: "Fifth Third Bank National Association", nav: { name: "Master Plan - 18489", to: "/master-plans/18489/members" } },
+  { caseId: "18489", label: "Master Plan - 18489", description: "", party: "Fifth Third Bank National Association", route: MASTER_PLAN_ROUTE },
   { caseId: "NTN-165772", label: "Notification - NTN-165772", description: "Sickness, treatment required for a medical condition or any other medical procedure", party: "Beth Alexander" },
   { caseId: "NTN-165771-GDC-02", label: "Group Disability Claim - NTN-165771-GDC-02", description: "Accident : 02/12/2026", party: "Erica Alexander" },
   { caseId: "NTN-165571", label: "Notification - NTN-165571", description: "Sickness, treatment required for a medical condition or any other medical procedure", party: "Dustin Adams" },
@@ -166,7 +167,7 @@ const INTAKE_RESULTS: readonly ResultRow[] = [
 function PopupResults({ onPick }: { readonly onPick: () => void }) {
   const navigate = useNavigate();
   return <div className="fx-search-body fx-search-body--popup">
-    <ResultsTable rows={INTAKE_RESULTS} selectedId="18489" onOpen={(nav) => openResult(nav, navigate, onPick)} />
+    <ResultsTable rows={INTAKE_RESULTS} selectedId="18489" onOpen={(route) => openResult(route, navigate, onPick)} />
   </div>;
 }
 
@@ -174,14 +175,14 @@ function RecentResults({ onPick }: { readonly onPick: () => void }) {
   const navigate = useNavigate();
   return (
     <div className="fx-search-body">
-      <ResultsTable rows={RECENT_RESULTS} selectedId="NTN-159898" onOpen={(nav) => openResult(nav, navigate, onPick)} />
+      <ResultsTable rows={RECENT_RESULTS} selectedId="NTN-159898" onOpen={(route) => openResult(route, navigate, onPick)} />
     </div>
   );
 }
 
-const openResult = (nav: ResultNav, navigate: (to: string) => void, onPick: () => void): void => {
+const openResult = (route: string, navigate: (to: string) => void, onPick: () => void): void => {
   onPick();
-  navigate(nav.to);
+  navigate(route);
 };
 
 function CaseSearch() {
@@ -265,7 +266,7 @@ function CaseTypeSelect() {
   );
 }
 
-function ResultsTable({ rows, selectedId, onOpen }: { readonly rows: readonly ResultRow[]; readonly selectedId?: string; readonly onOpen: (nav: ResultNav) => void }) {
+function ResultsTable({ rows, selectedId, onOpen }: { readonly rows: readonly ResultRow[]; readonly selectedId?: string; readonly onOpen: (route: string) => void }) {
   return (
     <div className="fx-results-block">
       <p className="fx-results-title">Search Results</p>
@@ -278,7 +279,7 @@ function ResultsTable({ rows, selectedId, onOpen }: { readonly rows: readonly Re
   );
 }
 
-function ResultTr({ row, selected, onOpen }: { readonly row: ResultRow; readonly selected: boolean; readonly onOpen: (nav: ResultNav) => void }) {
+function ResultTr({ row, selected, onOpen }: { readonly row: ResultRow; readonly selected: boolean; readonly onOpen: (route: string) => void }) {
   return (
     <tr aria-selected={selected} className={selected ? "fx-row-on" : undefined}>
       <td><ResultCase row={row} onOpen={onOpen} /></td>
@@ -288,8 +289,6 @@ function ResultTr({ row, selected, onOpen }: { readonly row: ResultRow; readonly
   );
 }
 
-function ResultCase({ row, onOpen }: { readonly row: ResultRow; readonly onOpen: (nav: ResultNav) => void }) {
-  if (!row.nav) return <span className="fx-result-text">{row.label}</span>;
-  const nav = row.nav;
-  return <button type="button" className="fx-result" aria-label={nav.name} onClick={() => onOpen(nav)}>{row.label}</button>;
+function ResultCase({ row, onOpen }: { readonly row: ResultRow; readonly onOpen: (route: string) => void }) {
+  return <button type="button" className="fx-result" onClick={() => onOpen(rowRoute(row))}>{row.label}</button>;
 }

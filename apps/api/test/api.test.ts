@@ -446,6 +446,39 @@ describe("Case retrieval boundary", () => {
   });
 });
 
+describe("Search-fixture background cases", () => {
+  const BACKGROUND_CASES = [
+    ["NTN-162642", "Anthony Ellis", true, false],
+    ["NTN-162641", "Anthony Ellis", true, false],
+    ["NTN-160306", "Anthony Ellis", true, false],
+    ["NTN-159901", "David Hunter", true, false],
+    ["NTN-148123", "EDNA TIERTEST1", true, false],
+    ["NTN-165773", "Zachary Alexander", true, true],
+    ["NTN-165772", "Beth Alexander", true, true],
+    ["NTN-165771", "Erica Alexander", false, true],
+    ["NTN-165571", "Dustin Adams", true, false],
+    ["NTN-165335", "David Hunter", false, false],
+  ] as const;
+
+  it.each(BACKGROUND_CASES)(
+    "should resolve search result %s to a deterministic record for %s",
+    async (caseId, party, hasAbsence, hasGdc) => {
+      const res = await get(`/api/cases/${caseId}`);
+      expect(res.statusCode).toBe(200);
+      expect(res.json().value.notification.id).toBe(caseId);
+      expect(res.json().value.claimant.fullName).toBe(party);
+      expect(Boolean(res.json().value.absence)).toBe(hasAbsence);
+      expect(Boolean(res.json().value.gdc)).toBe(hasGdc);
+    },
+  );
+
+  it("should keep the Erica case-number search unambiguous after seeding sibling notifications", async () => {
+    const res = await get("/api/cases/search?term=165775");
+    expect(res.json().value).toHaveLength(1);
+    expect(res.json().value[0]).toMatchObject({ caseId: "NTN-165775" });
+  });
+});
+
 describe("Case execution boundary", () => {
   const executeDavid = (payload: unknown) => post("/api/cases/NTN-159898/execute", payload);
 
