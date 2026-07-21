@@ -1,6 +1,8 @@
 import { useState } from "react";
+import type { ProviderDetails, ProviderSearch } from "@fineos/contracts";
 import { createProvider } from "../../app/api";
 import { TextField } from "../intake/fields/controls";
+import { PanelList } from "./dossier-ui";
 
 export interface ProviderChoice {
   readonly id: string;
@@ -13,10 +15,9 @@ export type ProviderSelectionDecision =
 
 const PAGE_TITLE = "Choose the Party to have a role of Medical Provider";
 const SEARCH_BY = ["Person", "Organization", "Both"] as const;
-const KNOWN_PROVIDERS: readonly ProviderChoice[] = [
-  { id: "PTY-TRAVIS", name: "Travis Larson" },
-  { id: "PTY-TRAVIS-DR", name: "Travis Larson R Dr" },
-];
+
+const criterion = (search: ProviderSearch | undefined, label: string): string =>
+  search?.criteria.find((field) => field.label === label)?.value ?? "";
 
 interface FlowProps {
   readonly decision: ProviderSelectionDecision;
@@ -39,16 +40,20 @@ function ProviderStatus({ decision }: { readonly decision: ProviderSelectionDeci
   return <p className="fx-detail-value">No medical provider will be attached.</p>;
 }
 
+type ChooseView =
+  | { readonly step: "details"; readonly provider: ProviderDetails }
+  | { readonly step: "add" };
+
 // The captured execution flow renders "Choose the Party" as a full record-body
 // view (bright left rail + header preserved), not a dimmed modal. Result rows
 // open a read-only Provider Details window; "Add Person" opens a create modal.
-export function ChooseProviderPage({ onAttach, onClose }: { readonly onAttach: (choice: ProviderChoice) => void; readonly onClose: () => void }) {
-  const [view, setView] = useState<{ readonly step: "details"; readonly choice: ProviderChoice } | { readonly step: "add" } | null>(null);
+export function ChooseProviderPage({ providerSearch, onAttach, onClose }: { readonly providerSearch?: ProviderSearch; readonly onAttach: (choice: ProviderChoice) => void; readonly onClose: () => void }) {
+  const [view, setView] = useState<ChooseView | null>(null);
   return <div className="fx-choose-party" role="dialog" aria-label={PAGE_TITLE}>
     {!view && <ProviderTabs />}
     {!view && <SearchByBand />}
-    {!view && <ProviderSearchForm onView={(choice) => setView({ step: "details", choice })} onAdd={() => setView({ step: "add" })} />}
-    {view?.step === "details" && <ProviderDetailsWindow choice={view.choice} onAttach={onAttach} onClose={() => setView(null)} />}
+    {!view && <ProviderSearchForm providerSearch={providerSearch} onView={(provider) => setView({ step: "details", provider })} onAdd={() => setView({ step: "add" })} />}
+    {view?.step === "details" && <ProviderDetailsWindow provider={view.provider} onAttach={onAttach} onClose={() => setView(null)} />}
     {view?.step === "add" && <AddPersonModal onCreate={onAttach} onCancel={() => { setView(null); onClose(); }} />}
   </div>;
 }
@@ -66,16 +71,16 @@ function SearchByBand() {
   </div>;
 }
 
-function ProviderSearchForm({ onView, onAdd }: { readonly onView: (choice: ProviderChoice) => void; readonly onAdd: () => void }) {
-  const [first, setFirst] = useState("Travis");
-  const [last, setLast] = useState("Larson");
-  const [results, setResults] = useState<readonly ProviderChoice[]>([]);
+function ProviderSearchForm({ providerSearch, onView, onAdd }: { readonly providerSearch?: ProviderSearch; readonly onView: (provider: ProviderDetails) => void; readonly onAdd: () => void }) {
+  const [first, setFirst] = useState(criterion(providerSearch, "First Name"));
+  const [last, setLast] = useState(criterion(providerSearch, "Last Name"));
+  const [results, setResults] = useState<readonly ProviderDetails[]>([]);
   return <div className="fx-provider-body">
     <span className="fx-provider-help" aria-hidden="true">i</span>
     <SearchGrid first={first} last={last} onFirst={setFirst} onLast={setLast} />
     <ProviderCriteria />
     <div className="fx-provider-actions">
-      <button type="button" className="fx-step-btn" onClick={() => setResults(KNOWN_PROVIDERS)}>Search</button>
+      <button type="button" className="fx-step-btn" onClick={() => setResults(providerSearch?.candidates ?? [])}>Search</button>
       <button type="button" className="fx-step-btn" onClick={onAdd}>Add Person</button>
     </div>
     <ProviderResults results={results} onView={onView} />
@@ -119,15 +124,15 @@ function ProviderCriteria() {
   </div>;
 }
 
-function ProviderResults({ results, onView }: { readonly results: readonly ProviderChoice[]; readonly onView: (choice: ProviderChoice) => void }) {
+function ProviderResults({ results, onView }: { readonly results: readonly ProviderDetails[]; readonly onView: (provider: ProviderDetails) => void }) {
   return <div className="fx-provider-results">
     <p className="fx-results-title">Person Search Results</p>
     <table className="fx-table fx-results-table">
       <thead><tr><th>Type</th><th>Name</th><th>Fax Number</th><th>Phone Number</th></tr></thead>
-      <tbody>{results.map((choice, index) => (
-        <tr key={choice.id} className={index === 0 ? "fx-row--sel" : undefined}>
+      <tbody>{results.map((provider, index) => (
+        <tr key={provider.partyId} className={index === 0 ? "fx-row--sel" : undefined}>
           <td>Agent</td>
-          <td><button type="button" className="fx-result" onClick={() => onView(choice)}>{choice.name}</button></td>
+          <td><button type="button" className="fx-result" onClick={() => onView(provider)}>{provider.fullName}</button></td>
           <td /><td />
         </tr>
       ))}</tbody>
@@ -135,41 +140,49 @@ function ProviderResults({ results, onView }: { readonly results: readonly Provi
   </div>;
 }
 
-// Read-only Provider Details window over the (hidden) search page. Static
-// display fields mirror the source; the only interactive controls are Attach
-// and Back, matching the captured read-only screen and the control audit.
-function ProviderDetailsWindow({ choice, onAttach, onClose }: { readonly choice: ProviderChoice; readonly onAttach: (choice: ProviderChoice) => void; readonly onClose: () => void }) {
-  return <div className="fx-provider-window" role="dialog" aria-label={`Provider Details — ${choice.name}`}>
+// Read-only Provider Details window over the (hidden) search page. Every value
+// comes from the dossier's provider details; the only interactive controls are
+// Attach and Back, matching the captured read-only screen and the control audit.
+function ProviderDetailsWindow({ provider, onAttach, onClose }: { readonly provider: ProviderDetails; readonly onAttach: (choice: ProviderChoice) => void; readonly onClose: () => void }) {
+  return <div className="fx-provider-window" role="dialog" aria-label={`Provider Details — ${provider.fullName}`}>
     <div className="fx-provider-window-head">
       <span className="fx-record-avatar" aria-hidden="true" />
-      <span className="fx-provider-window-name">{choice.name}</span>
+      <span className="fx-provider-window-name">{provider.fullName}</span>
       <span className="fx-provider-window-close" aria-hidden="true">×</span>
     </div>
-    <div className="fx-provider-window-sub"><strong>Customer Number</strong>{choice.id === "PTY-TRAVIS" ? "607440" : "607441"}</div>
+    <div className="fx-provider-window-sub"><strong>Customer Number</strong>{provider.customerNumber}</div>
     <div className="fx-provider-window-actions"><span>Create Notification</span><span>Edit Party</span><span>Delete Party</span><span>Merge Party</span><span>Add Activity</span><span>Add Case</span></div>
-    <div className="fx-provider-window-tabs">{["Profile", "Policies for Client", "Party History", "Leave Information", "Provider Information"].map((t) => (
-      <span key={t} className={t === "Provider Information" ? "fx-provider-tab fx-provider-tab--on" : "fx-provider-tab"}>{t}</span>))}</div>
+    <div className="fx-provider-window-tabs">{["Profile", "Policies for Client", "Party History", "Leave Information", "Provider Information"].map((tab) => (
+      <span key={tab} className={tab === "Provider Information" ? "fx-provider-tab fx-provider-tab--on" : "fx-provider-tab"}>{tab}</span>))}</div>
     <div className="fx-provider-window-subtabs"><b>Provider Details</b><span>Service Approval Agreements</span><span>Invoices</span></div>
     <div className="fx-provider-window-body">
       <p role="status" className="fx-readonly-note">Application is operating in read-only mode. Edits cannot be performed using this screen.</p>
-      <h2 className="fx-section-title">Provider Details — {choice.name}</h2>
+      <h2 className="fx-section-title">Provider Details — {provider.fullName}</h2>
       <div className="fx-provider-detail-grid">
-        <Field label="National Provider Identifier" value="0" />
-        <Field label="Provider Type" value="Unknown" />
-        <Field label="Service Group" value="Unknown" />
-        <Field label="Approval Indicator" value="—" />
-        <Field label="Approval Start Date" value="01/29/2026" />
-        <Field label="Approval End Date" value="-" />
+        <Field label="National Provider Identifier" value={provider.nationalProviderIdentifier} />
+        <Field label="Provider Type" value={provider.providerType} />
+        <Field label="Service Group" value={provider.serviceGroup} />
+        <Field label="Approval Indicator" value={provider.approvalIndicator} />
+        <Field label="Approval Start Date" value={provider.approvalStartDate} />
+        <Field label="Approval End Date" value={provider.approvalEndDate} />
       </div>
-      <h3 className="fx-provider-subhead">Other Provider IDs</h3>
-      <p className="fx-empty-inline">0-0 of 0</p>
-      <h3 className="fx-provider-subhead">Certifications</h3>
+      <PanelList panels={provider.panels} />
+      <ProviderCertifications provider={provider} />
       <div className="fx-form-actions">
-        <button type="button" className="fx-primary" onClick={() => onAttach(choice)}>Attach</button>
+        <button type="button" className="fx-primary" onClick={() => onAttach({ id: provider.partyId, name: provider.fullName })}>Attach</button>
         <button type="button" className="fx-ghost" onClick={onClose}>Back</button>
       </div>
     </div>
   </div>;
+}
+
+function ProviderCertifications({ provider }: { readonly provider: ProviderDetails }) {
+  return <><h3 className="fx-provider-subhead">Certifications</h3>
+    {provider.certifications.length === 0
+      ? <p className="fx-empty-inline">0-0 of 0</p>
+      : provider.certifications.map((cert) => (
+        <p key={`${cert.group}-${cert.type}`}>{cert.group} — {cert.type} ({cert.status})</p>
+      ))}</>;
 }
 
 function Field({ label, value }: { readonly label: string; readonly value: string }) {
@@ -179,8 +192,8 @@ function Field({ label, value }: { readonly label: string; readonly value: strin
 // Add Person create-new-party modal. Name fields plus OK, matching the source
 // header/section chrome and the control audit's expected inventory.
 function AddPersonModal({ onCreate, onCancel }: { readonly onCreate: (choice: ProviderChoice) => void; readonly onCancel: () => void }) {
-  const [first, setFirst] = useState("Travis");
-  const [last, setLast] = useState("Larson");
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
   const [error, setError] = useState<string | null>(null);
   return <div className="fx-addperson" role="dialog" aria-label="Add Person">
     <div className="fx-addperson-head"><span>Add Person</span><span className="fx-addperson-close" aria-hidden="true" onClick={onCancel}>×</span></div>

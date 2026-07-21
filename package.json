@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:visual": "playwright test --config playwright.visual.config.ts",
-    "db:reset": "node --eval \"import('./apps/api/src/infrastructure/database.ts').then((m) => m.resetToSeededFile())\""
+    "db:reset": "node --import tsx --eval \"import('./apps/api/src/infrastructure/database.ts').then((m) => m.resetToSeededFile())\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

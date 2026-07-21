@@ -1,4 +1,12 @@
-import type { ApiErrorCode, ApiResult } from "@fineos/contracts";
+import type {
+  ApiErrorCode,
+  ApiResult,
+  PartyProfileDetails,
+  Process2Dossier,
+  RecentCaseRow,
+} from "@fineos/contracts";
+
+export type { PartyProfileDetails, Process2Dossier, RecentCaseRow };
 
 export interface SessionView {
   readonly token: string;
@@ -15,6 +23,7 @@ export interface PartyView {
   readonly phone: string | null;
   readonly homePhone: string | null;
   readonly email: string | null;
+  readonly details: PartyProfileDetails | null;
 }
 
 export interface CaseSummaryView {
@@ -71,6 +80,9 @@ export const createProvider = (input: ProviderInput): Promise<Result<PartyView>>
 export const searchCases = (term: string): Promise<Result<readonly CaseSummaryView[]>> =>
   get(`/cases/search?term=${query(term)}`);
 
+export const getRecentCases = (): Promise<Result<readonly RecentCaseRow[]>> =>
+  get("/cases/recent");
+
 export interface DraftInput {
   readonly source: string;
   readonly notificationDate: string;
@@ -106,11 +118,6 @@ export interface NotificationDetailView {
   readonly source: string;
   readonly notificationDate: string;
   readonly scope: { readonly kind: string; readonly value?: string };
-  readonly leaveReason?: string | null;
-  readonly conditionDescription?: string | null;
-  readonly workState?: string | null;
-  readonly diagnosisCode?: string | null;
-  readonly providerPartyId?: string | null;
   readonly status: string;
 }
 
@@ -138,12 +145,12 @@ export interface GdcCaseView {
 }
 
 export interface CaseDetailsView {
+  readonly dossier: Process2Dossier;
   readonly notification: NotificationDetailView;
   readonly absence?: AbsenceCaseView;
   readonly gdc?: GdcCaseView;
   readonly claimant: PartyView;
   readonly provider: PartyView | null;
-  readonly sections: Readonly<Record<string, unknown>>;
 }
 
 export type ExecutionTrackView = "absence" | "gdc";

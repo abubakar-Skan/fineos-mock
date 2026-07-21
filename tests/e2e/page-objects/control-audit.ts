@@ -308,8 +308,9 @@ const auditCaseSearch = async (page: Page): Promise<void> => {
   await assertInventory(dialog, CASE_SEARCH);
   await exerciseCaseFields(dialog);
   await dialog.getByRole("button", { name: "Search" }).click();
-  await expect(dialog.getByRole("button", { name: "Master Plan - 18489" })).toBeVisible();
-  await auditCaseResult(page);
+  await assertInventory(dialog, [...CASE_SEARCH, control("button", "NTN-165775")]);
+  await dialog.getByRole("button", { name: "NTN-165775" }).click();
+  await expect(page).toHaveURL(/\/cases\/NTN-165775\/general$/);
 };
 
 const exerciseCaseFields = async (dialog: Locator): Promise<void> => {
@@ -322,54 +323,25 @@ const exerciseCaseFields = async (dialog: Locator): Promise<void> => {
   await toggle(dialog.getByRole("checkbox", { name: "Display Sub-Cases" }));
 };
 
-const auditCaseResult = async (page: Page): Promise<void> => {
-  const dialog = page.getByRole("dialog", { name: "Case Search" });
-  const expected = [...CASE_SEARCH, control("button", "Master Plan - 18489"),
-    control("button", "NTN-165775")] as const;
-  await assertInventory(dialog, expected);
-  await dialog.getByRole("button", { name: "Master Plan - 18489" }).click();
-  await expect(page).toHaveURL(/\/master-plans\/18489\/members$/);
-  await auditNotificationSearchResult(page);
-};
-
-const auditNotificationSearchResult = async (page: Page): Promise<void> => {
-  const dialog = await openSearch(page);
-  await changeText(dialog.getByRole("textbox", { name: "Case Number" }), "165775");
-  await dialog.getByRole("button", { name: "Search" }).click();
-  await dialog.getByRole("button", { name: "NTN-165775" }).click();
-  await expect(dialog.getByRole("status")).toHaveText("Selected NTN-165775");
-};
-
 const CASE_RESULTS = [
-  { name: "Master Plan - 18489", effect: { kind: "url", value: /\/master-plans\/18489\/members$/ } },
-  { name: "NTN-165775", effect: { kind: "status", value: "Selected NTN-165775" } },
+  { term: "18489", name: "Master Plan - 18489", url: /\/master-plans\/18489\/members$/ },
+  { term: "165775", name: "NTN-165775", url: /\/cases\/NTN-165775\/general$/ },
 ] as const;
 
 const auditEveryCaseResult = async (page: Page): Promise<void> => {
   for (const result of CASE_RESULTS) {
-    const dialog = await openCaseResults(page);
+    const dialog = await openCaseResults(page, result.term, result.name);
     await dialog.getByRole("button", { name: result.name, exact: true }).click();
-    await assertCaseResultEffect(page, dialog, result.effect);
+    await expect(page).toHaveURL(result.url);
   }
 };
 
-const openCaseResults = async (page: Page): Promise<Locator> => {
+const openCaseResults = async (page: Page, term: string, resultName: string): Promise<Locator> => {
   const dialog = await openSearch(page);
-  await changeText(dialog.getByRole("textbox", { name: "Case Number" }), "165775");
+  await changeText(dialog.getByRole("textbox", { name: "Case Number" }), term);
   await dialog.getByRole("button", { name: "Search" }).click();
-  await assertInventory(dialog, [
-    ...CASE_SEARCH, ...CASE_RESULTS.map(({ name }) => control("button", name)),
-  ]);
+  await assertInventory(dialog, [...CASE_SEARCH, control("button", resultName)]);
   return dialog;
-};
-
-const assertCaseResultEffect = async (
-  page: Page,
-  dialog: Locator,
-  effect: (typeof CASE_RESULTS)[number]["effect"],
-): Promise<void> => {
-  if (effect.kind === "url") await expect(page).toHaveURL(effect.value);
-  else await expect(dialog.getByRole("status")).toHaveText(effect.value);
 };
 
 const PARTY_RESULTS = [

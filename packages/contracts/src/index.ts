@@ -2,6 +2,7 @@ export * from "./result";
 export * from "./party";
 export * from "./notification";
 export * from "./case-execution";
+export * from "./case-dossier";
 export * from "./api-errors";
 export * from "./intake-sections";
 export * from "./feature-flags";

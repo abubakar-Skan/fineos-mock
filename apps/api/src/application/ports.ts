@@ -6,6 +6,9 @@ import type {
   IntakeComponentScope,
   IntakeType,
   PartyId,
+  PartyProfileDetails,
+  Process2Dossier,
+  RecentCaseRow,
   Submission,
 } from "@fineos/contracts";
 
@@ -27,6 +30,7 @@ export interface PartyRecord {
   readonly phone: string | null;
   readonly homePhone: string | null;
   readonly email: string | null;
+  readonly details: PartyProfileDetails | null;
 }
 
 export interface ContactInput {
@@ -90,6 +94,9 @@ export interface NotificationRecord {
   readonly diagnosisCode: string | undefined;
   readonly providerPartyId: PartyId | undefined;
   readonly status: "DRAFT" | "SUBMITTED";
+  // Parsed from sections_json when it holds a persisted Process 2 dossier; the
+  // scenario_json column is never read here so evaluator metadata stays private.
+  readonly dossier: Process2Dossier | null;
 }
 
 export interface SubmissionRecord {
@@ -164,6 +171,7 @@ export interface CaseRepository {
   findGdcCase(id: CaseId): GdcCaseRecord | undefined;
   findComponentCases(notificationId: CaseId): ComponentCases;
   search(term: string): readonly CaseSummaryRecord[];
+  recent(): readonly RecentCaseRow[];
   startExecution(caseId: CaseId): DomainResult<ExecutionRunRecord, PersistenceError>;
   finishExecution(runId: string, status: ExecutionStatus): void;
   commitOutcome(commit: OutcomeCommit): void;

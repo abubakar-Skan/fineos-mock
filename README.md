@@ -186,13 +186,13 @@ Every endpoint validates at the boundary and returns a typed `{ ok: true, value 
 
 Seeded by `apps/api/src/infrastructure/seed.ts` (also used by `db:reset`):
 
-| Party | Role | Notification | Component(s) | Notes |
-| --- | --- | --- | --- | --- |
-| Erica Alexander (Fifth Third Bank National Association) | Insured | `NTN-165775` | Leave (`NTN-165775-ABS-01`) + GDC (`NTN-165775-GDC-02`) | Used by the intake walkthrough; the intake E2E flow. |
-| David Hunter (ACEDEX) | Insured | `NTN-159898` | Leave (`NTN-159898-ABS-01`, condition: torn ligament in knee) + GDC (`NTN-159898-GDC-02`, diagnosis `O80`) | Used by the case-execution walkthrough; `O80` is a preserved source inconsistency (diagnosis code doesn't match the knee narrative), kept intentionally rather than "corrected". |
-| Travis Larson | Medical provider | — | — | Attached to David's GDC case during execution's provider step. |
+- `NTN-159898` — David Hunter; successful Absence + GDC reference case, diagnosis `O80`, provider Travis Larson.
+- `NTN-170001` — Marcus Bailey; successful Absence-only case.
+- `NTN-170002` — Carla Nguyen; successful GDC-only case with no provider details.
+- `NTN-170003` — Derek Osei; `accommodation_only`, expected ineligible-intake escalation.
+- `NTN-170004` — Elena Ruiz; serious-health case with a missing condition description, expected conditions-not-met escalation.
 
-Newly created notifications (via the UI or `POST /api/parties/:partyId/notifications`) are internally coherent and can immediately enter case execution through their generated root case ID — see `full-lifecycle.spec.ts`.
+Each Process 2 root has a complete SQLite-backed dossier containing profile/contact/employment data, documents and eForm answers, Case Map participants, applicable Absence/GDC details, tasks/alerts, diagnosis evidence, and expected decision/terminal metadata. Erica Alexander remains a shared non-case party for Process 1 intake, and Travis Larson remains the reusable medical provider. `NTN-000000` is intentionally absent for the case-not-found branch.
 
 ## End-to-end walkthrough
 

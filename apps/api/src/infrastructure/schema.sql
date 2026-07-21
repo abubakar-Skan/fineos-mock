@@ -7,7 +7,8 @@ CREATE TABLE party (
   employer TEXT,
   phone TEXT,
   home_phone TEXT,
-  email TEXT
+  email TEXT,
+  details_json TEXT NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE notification (
@@ -24,7 +25,8 @@ CREATE TABLE notification (
   absence_periods_json TEXT NOT NULL DEFAULT '[]',
   diagnosis_code TEXT,
   provider_party_id TEXT REFERENCES party(id),
-  status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SUBMITTED'))
+  status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SUBMITTED')),
+  scenario_json TEXT NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE absence_case (

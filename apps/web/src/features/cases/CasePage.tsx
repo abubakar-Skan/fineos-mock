@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams, type NavigateFunction } from "react-router-dom";
-import { AUTOMATION_SHORTCUTS_ENABLED } from "@fineos/contracts";
+import {
+  AUTOMATION_SHORTCUTS_ENABLED,
+  type CaseMapNode,
+  type CaseMapParticipant,
+  type DossierBand,
+  type DossierField,
+} from "@fineos/contracts";
 import { AppShell } from "../../components/fineos/AppShell";
 import { RecordShell } from "../../components/fineos/RecordShell";
 import { EmptyState } from "../../components/fineos/DataTable";
@@ -9,7 +15,6 @@ import {
   absenceCaseId, caseKind, casePresentation, defaultTab, gdcCaseId,
   rootCaseId, tabFromSlug, tabSlug, type CaseKind,
 } from "./case-tabs";
-import { displayDate, isDavidReference } from "./case-sections";
 import { DocumentsTab } from "./DocumentsTab";
 import { CaseMapTab } from "./CaseMapTab";
 import { ContactsTab } from "./ContactsTab";
@@ -164,7 +169,7 @@ const shellProps = (
   title: `${casePresentation(kind).titlePrefix} ${caseId}`,
   processTitle: tab === "Medical" ? "Medical Details" : undefined,
   subtitleLabel: ROLE_LABEL[kind],
-  subtitleValue: <SubtitleBand kind={kind} details={details} />,
+  subtitleValue: <SubtitleBand details={details} />,
   bandKind: kind,
   sidebar: <CaseSidebar caseId={caseId} kind={kind} details={details} navigate={navigate} />,
   actions: <ActionBar kind={kind} onRun={workflow.run} />,
@@ -175,37 +180,19 @@ const shellProps = (
 
 const claimantName = (details: CaseDetailsView): string => details.claimant.fullName;
 
-function SubtitleBand({ kind, details }: { readonly kind: CaseKind; readonly details: CaseDetailsView }) {
-  const employer = details.claimant.employer ?? "Unknown";
+// Header bands are read straight from the persisted dossier; the role band
+// (whose value is the claimant name) is dropped because the name already
+// renders as the linked heading beside it.
+const headerBands = (details: CaseDetailsView): readonly DossierBand[] =>
+  details.dossier.summary.bands.filter((band) => band.value !== claimantName(details));
+
+function SubtitleBand({ details }: { readonly details: CaseDetailsView }) {
   return <span className="fx-case-band">
     <Link className="fx-link" to={`/parties/${details.claimant.id}`}>{claimantName(details)}</Link>
-    {kind === "notification" && <NotificationBand details={details} />}
-    {kind === "absence" && <AbsenceBand employer={employer} />}
-    {kind === "gdc" && <GdcBand />}
+    {headerBands(details).map((band) => (
+      <span key={band.label}><strong>{band.label}</strong> {band.value}</span>
+    ))}
   </span>;
-}
-
-function NotificationBand({ details }: { readonly details: CaseDetailsView }) {
-  return <>
-    <span><strong>Date</strong> {displayDate(details.notification.notificationDate)}</span>
-    <span><strong>Expected return to work date</strong> 01/23/2026</span>
-    <span><strong>Actual return to work date</strong> -</span>
-  </>;
-}
-
-function AbsenceBand({ employer }: { readonly employer: string }) {
-  return <>
-    <span><strong>Employer</strong> {employer}</span>
-    <span><strong>Customer Instructions</strong> No</span>
-    <span><strong>Open Tasks</strong> Yes (1)</span>
-  </>;
-}
-
-function GdcBand() {
-  return <>
-    <span><strong>Customer Instructions</strong> Error</span>
-    <span><strong>Open Tasks</strong> No</span>
-  </>;
 }
 
 const COMMON_ACTIONS = ["Add Sub Case", "Correspondence", "Add Activity", "Add eForm", "Add Participant"] as const;
@@ -240,8 +227,8 @@ function CaseSidebar({ caseId, kind, details, navigate }: SidebarProps) {
   return <>
     <ComponentNav rootId={rootCaseId(caseId)} kind={kind} details={details} navigate={navigate} onNotice={setNotice} />
     <ParticipantsRail kind={kind} details={details} onNotice={setNotice} />
-    <OwnershipRail onNotice={setNotice} />
-    <SummaryRail kind={kind} details={details} />
+    <OwnershipRail details={details} onNotice={setNotice} />
+    <SummaryRail details={details} />
     {notice && <p role="status" className="fx-visually-hidden">{notice}</p>}
   </>;
 }
@@ -268,61 +255,52 @@ function ComponentLink({ label, active, onSelect }: { readonly label: string; re
     className={active ? "fx-comp fx-comp--on" : "fx-comp"} onClick={onSelect}>{label}</button>;
 }
 
-const PROVIDERS: Record<CaseKind, readonly string[]> = {
-  notification: [],
-  absence: ["Travis Larson"],
-  gdc: ["Dhanraj Venkatesan", "Dhanraj VI", "Travis Larson", "Travis Larson R Dr"],
+// The sidebar participant list is the case-map node for the active component
+// (root notification, or its absence/GDC child) so provider rows come from the
+// dossier instead of a per-case hardcoded map.
+const nodeForKind = (details: CaseDetailsView, kind: CaseKind): CaseMapNode => {
+  const root = details.dossier.caseMap;
+  if (kind === "notification") return root;
+  const type = kind === "absence" ? "absence_case" : "gdc_case";
+  return (root.children ?? []).find((child) => child.type === type) ?? root;
 };
 
 function ParticipantsRail({ kind, details, onNotice }: { readonly kind: CaseKind; readonly details: CaseDetailsView; readonly onNotice: (message: string) => void }) {
   return <section className="fx-rail-group" aria-label="Participants">
     <h2 className="fx-rail-head">Participants</h2>
-    <p className="fx-rail-role">{ROLE_LABEL[kind]}</p>
-    <Link className="fx-rail-person fx-link" to={`/parties/${details.claimant.id}`}>{claimantName(details)}</Link>
-    <p className="fx-rail-role">Employer</p>
-    <p className="fx-rail-person">{details.claimant.employer ?? "—"}</p>
-    <ProviderList names={providersFor(kind, details)} />
+    {nodeForKind(details, kind).participants.map((participant) => (
+      <ParticipantRow key={`${participant.role}-${participant.name}`} participant={participant} />
+    ))}
     <button type="button" className="fx-rail-btn" onClick={() => onNotice("Add Participant started.")}>Add Participant<Caret /></button>
   </section>;
 }
 
-const providersFor = (kind: CaseKind, details: CaseDetailsView): readonly string[] =>
-  isDavidReference(details) ? PROVIDERS[kind] : details.provider ? [details.provider.fullName] : [];
-
-function ProviderList({ names }: { readonly names: readonly string[] }) {
-  if (names.length === 0) return null;
-  return <><p className="fx-rail-role">Medical Provider</p>
-    {names.map((name) => <p key={name} className="fx-rail-person">{name}</p>)}</>;
+function ParticipantRow({ participant }: { readonly participant: CaseMapParticipant }) {
+  return <>
+    <p className="fx-rail-role">{participant.role}</p>
+    {participant.partyId
+      ? <Link className="fx-rail-person fx-link" to={`/parties/${participant.partyId}`}>{participant.name}</Link>
+      : <p className="fx-rail-person">{participant.name}</p>}
+  </>;
 }
 
-function OwnershipRail({ onNotice }: { readonly onNotice: (message: string) => void }) {
+function OwnershipRail({ details, onNotice }: { readonly details: CaseDetailsView; readonly onNotice: (message: string) => void }) {
   return <div className="fx-rail-group">
     <h2 className="fx-rail-head fx-rail-head--plain">Ownership</h2>
-    <p className="fx-rail-role">Assigned To</p>
-    <p className="fx-rail-person">Eligibility Specialist Team / Eligibility Specialist</p>
-    <p className="fx-rail-role">In Department</p>
-    <p className="fx-rail-person">Eligibility Specialist Team</p>
+    {details.dossier.ownership.sidebarFacts.map((fact) => <RailFact key={fact.key} field={fact} />)}
     <button type="button" className="fx-rail-btn" onClick={() => onNotice("Transfer Case started.")}>Transfer Case<Caret /></button>
   </div>;
 }
 
-function SummaryRail({ kind, details }: { readonly kind: CaseKind; readonly details: CaseDetailsView }) {
-  const primaryDiagnosis = details.gdc?.diagnosisCode === "O80"
-    ? "O80: Encounter for full-term uncomplicated delivery"
-    : details.gdc?.diagnosisCode ?? "Unknown";
+function SummaryRail({ details }: { readonly details: CaseDetailsView }) {
   return <div className="fx-rail-group">
     <h2 className="fx-rail-head fx-rail-head--plain">Summary Information</h2>
-    {kind === "gdc" && <><p className="fx-rail-role">Job Title</p><p className="fx-rail-person">Test Engineer</p>
-      <p className="fx-rail-role">Date of Hire</p><p className="fx-rail-person">06/01/2015</p>
-      <p className="fx-rail-role">Primary Diagnosis</p><p className="fx-rail-person">{primaryDiagnosis}</p>
-      <p className="fx-rail-role">Actual Delivery Date</p><p className="fx-rail-person">-</p>
-      <p className="fx-rail-role">Age at Disability Date</p><p className="fx-rail-person">45</p>
-      <p className="fx-rail-role">In Legal</p><p className="fx-rail-person">No</p></>}
-    {kind === "absence" && <><p className="fx-rail-role">Leave Reason</p><p className="fx-rail-person">Serious Health Condition - Employee</p>
-      <p className="fx-rail-role">Work State</p><p className="fx-rail-person">NJ</p></>}
-    <p className="fx-rail-role">Admin Group</p>
-    <p className="fx-rail-person">Unknown</p>
+    {details.dossier.summary.sidebarFacts.map((fact) => <RailFact key={fact.key} field={fact} />)}
   </div>;
+}
+
+function RailFact({ field }: { readonly field: DossierField }) {
+  return <><p className="fx-rail-role">{field.label}</p><p className="fx-rail-person">{field.value}</p></>;
 }
 
 function CaseBody({ ctx, kind, tab, navigate }: { readonly ctx: PanelContext; readonly kind: CaseKind; readonly tab: string; readonly navigate: NavigateFunction }) {

@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams, type NavigateFunction } from "react-router-dom";
+import type { PartyAddress, Process2PartyProfile } from "@fineos/contracts";
 import { AppShell } from "../../components/fineos/AppShell";
 import { RecordShell } from "../../components/fineos/RecordShell";
 import { EmptyState } from "../../components/fineos/DataTable";
 import { Dialog } from "../../components/fineos/Dialog";
+import { PanelList } from "../cases/dossier-ui";
 import { createNotification, getParty, updateContact, type PartyView } from "../../app/api";
 
 const PARTY_TABS = [
@@ -12,6 +14,14 @@ const PARTY_TABS = [
 ] as const;
 
 const OTHER_ACTIONS = ["Merge Party", "Add Activity", "Add Case", "Inquiry", "Surround UI"] as const;
+
+// Only an insured Process 2 profile carries the panelised party details; other
+// parties (Erica fixture, freshly created providers) have no typed profile and
+// fall back to a minimal, generically derived view.
+const profileOf = (party: PartyView): Process2PartyProfile | null => {
+  const details = party.details;
+  return details && "profilePanels" in details ? details : null;
+};
 
 export function PartyPage() {
   const { partyId, view } = useParams();
@@ -52,13 +62,13 @@ function PartyRecord({ party, view, onParty }: RecordProps) {
     {notice && <p role="status" className="fx-notice">{notice}</p>}<PartyTabPanel tab={tab} view={view} party={party} />
     {editing && <EditPartyDialog party={party} onClose={() => setEditing(false)} onSave={(next) => finishEdit(next, onParty, setEditing)} />}
   </RecordShell>;
-  return isOverlay ? <div className="fx-party-execution-detail"><ExecutionCaseBackdrop />{record}</div> : record;
+  return isOverlay ? <div className="fx-party-execution-detail"><ExecutionCaseBackdrop party={party} />{record}</div> : record;
 }
 
-function ExecutionCaseBackdrop() {
+function ExecutionCaseBackdrop({ party }: { readonly party: PartyView }) {
   return <aside className="fx-party-case-backdrop" aria-hidden="true">
     <div className="fx-comp-box"><b>Notification</b><b>Absence Case</b><b>Group Disability Claim</b><b>STD Benefit</b></div>
-    <h2>⊖ Participants</h2><strong>Requester</strong><span>♟ David Hunter</span><strong>Employer</strong><span>▰ ACEDEX</span>
+    <h2>⊖ Participants</h2><strong>Requester</strong><span>♟ {party.fullName}</span><strong>Employer</strong><span>▰ {party.employer ?? "—"}</span>
     <button type="button" disabled>Add Participant⌄</button>
     <h2>Ownership</h2><strong>Assigned To</strong><span>Eligibility Specialist Team /<br />Eligibility Specialist</span>
     <strong>In Department</strong><span>Eligibility Specialist Team</span><button type="button" disabled>Transfer Case⌄</button>
@@ -111,64 +121,50 @@ function PartyTabPanel({ tab, view, party }: PanelProps) {
   return <EmptyState label={`${tab} — no data available`} />;
 }
 
-function ContactDetails({ party }: { readonly party: PartyView }) {
-  return <section className="fx-party-contact"><AddressDetails />
-    <h2 className="fx-section-title">Contact Details</h2>
-    <ContactPanels party={party} />
-    <div className="fx-party-route-links"><Link className="fx-link" to={`/parties/${party.id}`}>Back to Profile</Link>
-      <Link className="fx-link" to={`/parties/${party.id}/communication-preferences`}>Communication Preferences</Link></div>
-  </section>;
-}
-
-function AddressDetails() {
-  return <div className="fx-address-summary">
-    <DetailField label="Mailing address" value={"162 Main Street\nJersey City NJ 7030\nUSA"} />
-    <DetailField label="Effective from" value="11/16/2022" />
-    <DetailField label="Effective to" value="-" />
-    <DetailField label="Status" value="Verified ⟳" />
-    <span className="fx-link">+ Add address</span>
-  </div>;
-}
-
-function ContactPanels({ party, includeDuplicate = false }: { readonly party: PartyView; readonly includeDuplicate?: boolean }) {
-  return <div className="fx-contact-panels">
-    <DetailPanel title="Mobile"><DetailField label="Number" value={party.phone ?? "—"} /><DetailField label="Status" value="Verified ⟳" /></DetailPanel>
-    <DetailPanel title="Email"><DetailField label="Email" value={party.email ?? "—"} /><DetailField label="Status" value="Verified ⟳" /></DetailPanel>
-    {includeDuplicate && <DetailPanel title="Mobile"><DetailField label="Number" value={party.phone ?? "—"} /><DetailField label="Status" value="Verified ⟳" /></DetailPanel>}
-    <DetailPanel title="Home Phone"><DetailField label="Number" value={party.homePhone ?? "—"} /><DetailField label="Status" value="Verified" /></DetailPanel>
-    <div className="fx-detail-panel"><div className="fx-faux-panel-title">New Contact Details</div>
-      <span className="fx-link">+ Add phone number</span><span className="fx-link">+ Add email address</span><span className="fx-link">+ Add web address</span></div>
-  </div>;
-}
-
 function ProfileTab({ party }: { readonly party: PartyView }) {
+  const profile = profileOf(party);
   return (
     <section className="fx-party-profile">
       <h2 className="fx-section-title">Personal Details</h2>
-      <ProfilePanels party={party} />
-      <AddressDetailsSection />
+      {profile ? <div className="fx-party-cols fx-party-cols--wide"><PanelList panels={profile.profilePanels} /></div> : <GenericProfile party={party} />}
+      <AddressDetailsSection addresses={profile?.addresses ?? []} />
       <Link className="fx-link" to={`/parties/${party.id}/contact-details`}>Contact Details</Link>
     </section>
   );
 }
 
-function AddressDetailsSection() {
+function GenericProfile({ party }: { readonly party: PartyView }) {
+  return (
+    <div className="fx-party-cols fx-party-cols--wide"><div className="fx-party-col">
+      <DetailPanel title="Name"><DetailField label="Name" value={party.fullName} /><DetailField label="Verified" value="Yes" /></DetailPanel>
+      <DetailPanel title="Personal Identification"><DetailField label="Date of birth" value={usDate(party.dateOfBirth)} /></DetailPanel>
+      <DetailPanel title="Additional Information"><DetailField label="Party type" value="Insured" /><DetailField label="Occupation" value="Unknown" /></DetailPanel>
+    </div></div>
+  );
+}
+
+function AddressDetailsSection({ addresses }: { readonly addresses: readonly PartyAddress[] }) {
   return (
     <>
       <h2 className="fx-section-title fx-address-heading">Address Details</h2>
-      <div className="fx-address-block"><HomeAddressPanel /><NewAddressPanel /></div>
+      <div className="fx-address-block">
+        {addresses.map((address) => <AddressPanel key={`${address.type}-${address.line1}`} address={address} />)}
+        <NewAddressPanel />
+      </div>
     </>
   );
 }
 
-// ponytail: PartyView carries no address; the seeded execution party (David
-// Hunter) is the only Address Details state under visual comparison, so the
-// HOME block shows its mailing address literally rather than widening the API.
-function HomeAddressPanel() {
+const formatAddress = (address: PartyAddress): string =>
+  [address.line1, address.line2, `${address.city} ${address.region} ${address.postalCode}`, address.country]
+    .filter((line) => line && line.trim().length > 0)
+    .join("\n");
+
+function AddressPanel({ address }: { readonly address: PartyAddress }) {
   return (
     <div className="fx-detail-panel fx-address-home">
-      <h3>HOME<span className="fx-address-icons" aria-hidden="true">✎ 🗑</span></h3>
-      <DetailField label="Mailing address" value={"162 Main Street\nJersey City NJ 7030\nUSA"} />
+      <h3>{address.type.toUpperCase()}<span className="fx-address-icons" aria-hidden="true">✎ 🗑</span></h3>
+      <DetailField label="Mailing address" value={formatAddress(address)} />
     </div>
   );
 }
@@ -185,145 +181,54 @@ function NewAddressPanel() {
 const usDate = (iso: string | null): string =>
   iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}/${iso.slice(0, 4)}` : (iso ?? "—");
 
-function CommunicationPreferences({ party }: { readonly party: PartyView }) {
-  return <section className="fx-party-contact fx-party-communication">
-    <div className="fx-party-status"><strong>Status</strong><span>Verified ⟳</span></div>
-    <h2 className="fx-section-title">Contact Details</h2><ContactPanels party={party} includeDuplicate />
-    <h2 className="fx-section-title">Communication Preferences</h2>
-    <div className="fx-communication-panels">
-      <WrittenCorrespondence email={party.email} />
-      <NotificationUpdates email={party.email} />
-      <DetailPanel title="Direct Communication">
-        <DetailField label="Preferred contact method" value="Email" />
-      </DetailPanel>
-    </div>
-    <Link className="fx-link" to={`/parties/${party.id}/contact-details`}>Back to Contact Details</Link>
+function ContactDetails({ party }: { readonly party: PartyView }) {
+  const profile = profileOf(party);
+  return <section className="fx-party-contact">
+    <AddressSummary addresses={profile?.addresses ?? []} />
+    <h2 className="fx-section-title">Contact Details</h2>
+    {profile ? <div className="fx-contact-panels"><PanelList panels={profile.contactPanels} /><NewContactDetails /></div> : <GenericContact party={party} />}
+    <div className="fx-party-route-links"><Link className="fx-link" to={`/parties/${party.id}`}>Back to Profile</Link>
+      <Link className="fx-link" to={`/parties/${party.id}/communication-preferences`}>Communication Preferences</Link></div>
   </section>;
 }
 
-function WrittenCorrespondence({ email }: { readonly email: string | null }) {
-  return <DetailPanel title="Written Correspondence">
-    <DetailField label="Go paperless" value="Yes" />
-    <DetailField label="Send notification of correspondence via" value={email ?? "Email"} />
-  </DetailPanel>;
+function AddressSummary({ addresses }: { readonly addresses: readonly PartyAddress[] }) {
+  const address = addresses[0];
+  return <div className="fx-address-summary">
+    <DetailField label="Mailing address" value={address ? formatAddress(address) : "—"} />
+    <DetailField label="Effective from" value={address?.effectiveFrom ?? "-"} />
+    <DetailField label="Effective to" value={address?.effectiveTo ?? "-"} />
+    <DetailField label="Status" value="Verified ⟳" />
+    <span className="fx-link">+ Add address</span>
+  </div>;
 }
 
-function NotificationUpdates({ email }: { readonly email: string | null }) {
-  return <DetailPanel title="Notification of Updates">
-    <DetailField label="Notify on update via SMS" value="No" />
-    <DetailField label="Notify on update via Email" value="Yes" />
-    <DetailField label="Send email to" value={email ?? "—"} />
-  </DetailPanel>;
+function GenericContact({ party }: { readonly party: PartyView }) {
+  return <div className="fx-contact-panels">
+    <DetailPanel title="Mobile"><DetailField label="Number" value={party.phone ?? "—"} /></DetailPanel>
+    <DetailPanel title="Email"><DetailField label="Email" value={party.email ?? "—"} /></DetailPanel>
+    <DetailPanel title="Home Phone"><DetailField label="Number" value={party.homePhone ?? "—"} /></DetailPanel>
+    <NewContactDetails />
+  </div>;
 }
 
-// Two column groupings render the shared masonry packing FINEOS produces at
-// each captured width: four columns at ≥1530 (Erica, intake-s1-3) and five at
-// the narrower execution window (David, execution-s5-0). CSS shows exactly one.
-function ProfilePanels({ party }: { readonly party: PartyView }) {
-  return (<><WideProfileColumns party={party} /><NarrowProfileColumns party={party} /></>);
+function NewContactDetails() {
+  return <div className="fx-detail-panel"><div className="fx-faux-panel-title">New Contact Details</div>
+    <span className="fx-link">+ Add phone number</span><span className="fx-link">+ Add email address</span><span className="fx-link">+ Add web address</span></div>;
 }
 
-function WideProfileColumns({ party }: { readonly party: PartyView }) {
-  return (
-    <div className="fx-party-cols fx-party-cols--wide">
-      <div className="fx-party-col"><NamePanel party={party} /><SecurityPanel /><OccupationsPanel /></div>
-      <div className="fx-party-col"><IdentificationPanel party={party} /></div>
-      <div className="fx-party-col"><AdditionalPanel /><AliasesPanel /></div>
-      <div className="fx-party-col"><NationalityPanel /><LanguagesPanel /></div>
+function CommunicationPreferences({ party }: { readonly party: PartyView }) {
+  const profile = profileOf(party);
+  return <section className="fx-party-contact fx-party-communication">
+    <div className="fx-party-status"><strong>Status</strong><span>Verified ⟳</span></div>
+    <h2 className="fx-section-title">Contact Details</h2>
+    {profile ? <div className="fx-contact-panels"><PanelList panels={profile.contactPanels} /><NewContactDetails /></div> : <GenericContact party={party} />}
+    <h2 className="fx-section-title">Communication Preferences</h2>
+    <div className="fx-communication-panels">
+      {profile ? <PanelList panels={profile.communicationPreferences} /> : <DetailPanel title="Direct Communication"><DetailField label="Preferred contact method" value={party.email ?? "Email"} /></DetailPanel>}
     </div>
-  );
-}
-
-function NarrowProfileColumns({ party }: { readonly party: PartyView }) {
-  return (
-    <div className="fx-party-cols fx-party-cols--narrow">
-      <div className="fx-party-col"><NamePanel party={party} /><LanguagesPanel /></div>
-      <div className="fx-party-col"><IdentificationPanel party={party} /></div>
-      <div className="fx-party-col"><AdditionalPanel /></div>
-      <div className="fx-party-col"><NationalityPanel /><AliasesPanel /></div>
-      <div className="fx-party-col"><SecurityPanel /><OccupationsPanel /></div>
-    </div>
-  );
-}
-
-function NamePanel({ party }: { readonly party: PartyView }) {
-  return (
-    <DetailPanel title="Name">
-      <DetailField label="Name" value={party.fullName} />
-      <DetailField label="Verified" value="Yes" />
-    </DetailPanel>
-  );
-}
-
-// ponytail: identification/security/nationality values mirror the Erica Alexander
-// reference fixture; David Hunter's execution party screen is owned separately.
-function IdentificationPanel({ party }: { readonly party: PartyView }) {
-  return (
-    <DetailPanel title="Personal Identification">
-      <DetailField label="Identification number type" value="Social Security Number" />
-      <DetailField label="Identification number" value="114-66-8847" />
-      <DetailField label="Date of birth" value={usDate(party.dateOfBirth)} />
-      <DetailField label="Age attained" value="45" />
-      <DetailField label="Gender" value="Female" />
-      <DetailField label="Marital status" value="Unknown" />
-    </DetailPanel>
-  );
-}
-
-function AdditionalPanel() {
-  return (
-    <DetailPanel title="Additional Information">
-      <DetailField label="Party type" value="Insured" />
-      <DetailField label="Date of death" value="-" />
-      <DetailField label="Occupation" value="Unknown" />
-    </DetailPanel>
-  );
-}
-
-function NationalityPanel() {
-  return (
-    <DetailPanel title="Nationality">
-      <DetailField label="Nationality" value="Unknown" />
-      <DetailField label="Country of birth" value="Unknown" />
-    </DetailPanel>
-  );
-}
-
-function SecurityPanel() {
-  return (
-    <DetailPanel title="Security">
-      <DetailField label="Secured client" value="No" />
-      <DetailField label="Staff member" value="No" />
-    </DetailPanel>
-  );
-}
-
-function AliasesPanel() {
-  return (
-    <DetailPanel title="Aliases">
-      <DetailField label="Carrier Party Identifier" value="114668847-10051980" />
-      <span className="fx-link fx-add-another">+ Add another</span>
-    </DetailPanel>
-  );
-}
-
-function LanguagesPanel() {
-  return (
-    <DetailPanel title="Languages">
-      <DetailField label="Correspondence translation required" value="No" />
-      <DetailField label="Interpreter required" value="No" />
-      <DetailField label="Preferred language" value="English" />
-      <span className="fx-link fx-add-another">+ Add another</span>
-    </DetailPanel>
-  );
-}
-
-function OccupationsPanel() {
-  return (
-    <DetailPanel title="Occupations">
-      <DetailField label="Current" value="Unknown" />
-    </DetailPanel>
-  );
+    <Link className="fx-link" to={`/parties/${party.id}/contact-details`}>Back to Contact Details</Link>
+  </section>;
 }
 
 interface EditPartyProps {

@@ -6,6 +6,7 @@ import {
   type ComponentScope,
   type ConditionDescriptionPresence,
   type DiagnosisCodePresence,
+  type DraftComponentScope,
   type ExecutionError,
   type ExecutionInput,
   type ExecutionOutcome,
@@ -15,9 +16,12 @@ import {
   type IntakeType,
   type LeaveReason,
   type PartyId,
+  type Process2Dossier,
+  type RecentCaseRow,
 } from "@fineos/contracts";
 import { executeCase } from "../domain/case-execution";
 import { apiErr, apiOk } from "./api-result";
+import { synthesizeDossier } from "./dossier-view";
 import { validateProvider, type ProviderError } from "./provider-validation";
 import type {
   AbsenceCaseRecord,
@@ -70,13 +74,22 @@ export interface ExecutionResult extends ExecutionOutcome {
   readonly runId: string;
 }
 
+export interface CaseNotificationView {
+  readonly id: CaseId;
+  readonly partyId: PartyId;
+  readonly source: string;
+  readonly notificationDate: string;
+  readonly scope: DraftComponentScope;
+  readonly status: "DRAFT" | "SUBMITTED";
+}
+
 export interface CaseDetails {
-  readonly notification: NotificationRecord;
+  readonly dossier: Process2Dossier;
+  readonly notification: CaseNotificationView;
   readonly absence: AbsenceCaseRecord | undefined;
   readonly gdc: GdcCaseRecord | undefined;
   readonly claimant: PartyRecord;
   readonly provider: PartyRecord | null;
-  readonly sections: Readonly<Record<string, unknown>>;
 }
 
 export interface ExecutionDeps {
@@ -91,6 +104,7 @@ type ExecuteError =
 
 export interface ExecutionService {
   searchCases(term: string): ApiResult<readonly CaseSummaryRecord[], never>;
+  recentCases(): ApiResult<readonly RecentCaseRow[], never>;
   getCase(id: string): ApiResult<CaseDetails, "case_not_found">;
   execute(id: string, decisions: ExecutionDecisions): ApiResult<ExecutionResult, ExecuteError>;
   getRun(id: string, runId: string): ApiResult<ExecutionRunRecord, "case_not_found">;
@@ -98,6 +112,7 @@ export interface ExecutionService {
 
 export const createExecutionService = (deps: ExecutionDeps): ExecutionService => ({
   searchCases: (term) => apiOk(deps.cases.search(term)),
+  recentCases: () => apiOk(deps.cases.recent()),
   getCase: (id) => getCase(deps, id),
   execute: (id, decisions) => execute(deps, id, decisions),
   getRun: (id, runId) => getRun(deps, id, runId),
@@ -120,8 +135,19 @@ const caseDetails = (
   deps: ExecutionDeps, notification: NotificationRecord,
   components: ComponentCases, claimant: PartyRecord,
 ): CaseDetails => ({
-  notification, claimant, absence: components.absence, gdc: components.gdc,
-  provider: findProvider(deps, components.gdc), sections: notification.sections,
+  dossier: notification.dossier ?? synthesizeDossier(notification, components, claimant),
+  notification: notificationView(notification),
+  claimant, absence: components.absence, gdc: components.gdc,
+  provider: findProvider(deps, components.gdc),
+});
+
+const notificationView = (notification: NotificationRecord): CaseNotificationView => ({
+  id: notification.id,
+  partyId: notification.partyId,
+  source: notification.source,
+  notificationDate: notification.notificationDate,
+  scope: notification.scope,
+  status: notification.status,
 });
 
 const findProvider = (deps: ExecutionDeps, gdc?: GdcCaseRecord): PartyRecord | null =>

@@ -1,9 +1,9 @@
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog } from "../../components/fineos/Dialog";
 import { TabBar, tabId } from "../../components/fineos/RecordShell";
 import { caseKind, defaultTab, tabSlug } from "../cases/case-tabs";
-import { searchCases, searchParties, type CaseSummaryView, type PartyView } from "../../app/api";
+import { getRecentCases, searchCases, searchParties, type CaseSummaryView, type PartyView, type RecentCaseRow } from "../../app/api";
 
 const SEARCH_TABS = ["Case", "Party", "Recent"] as const;
 
@@ -131,51 +131,61 @@ interface ResultRow {
   readonly route?: string;
 }
 
+interface RoutableCase {
+  readonly caseId: string;
+  readonly route?: string;
+}
+
 // Each row opens its own record: the Master Plan row carries an explicit route;
 // every other row is routed by its case-id suffix (notification → general,
 // absence → absence-hub, GDC → claim-hub) via the shared case-tabs helpers.
-const rowRoute = (row: ResultRow): string =>
+const rowRoute = (row: RoutableCase): string =>
   row.route ?? `/cases/${row.caseId}/${tabSlug(defaultTab(caseKind(row.caseId)))}`;
 
-const RECENT_RESULTS: readonly ResultRow[] = [
-  { caseId: "NTN-159898", label: "Notification - NTN-159898", description: "", party: "David Hunter" },
-  { caseId: "NTN-162642-ABS-01", label: "Absence Case - NTN-162642-ABS-01", description: "Pregnancy/Maternity | Birth Disability : 01/22/2026-07/26/2026, Intermittent", party: "Anthony Ellis" },
-  { caseId: "NTN-162642", label: "Notification - NTN-162642", description: "", party: "Anthony Ellis" },
-  { caseId: "NTN-162641", label: "Notification - NTN-162641", description: "", party: "Anthony Ellis" },
-  { caseId: "NTN-162641-ABS-01", label: "Absence Case - NTN-162641-ABS-01", description: "Care for a Family Member | Serious Health Condition : 01/30/2026, Pattern: Continuous", party: "Anthony Ellis" },
-  { caseId: "NTN-160306-ABS-01", label: "Absence Case - NTN-160306-ABS-01", description: "Care for a Family Member | Serious Health Condition : 01/12/2026, Pattern: Continuous", party: "Anthony Ellis" },
-  { caseId: "NTN-160306", label: "Notification - NTN-160306", description: "", party: "Anthony Ellis" },
-  { caseId: "NTN-159901", label: "Notification - NTN-159901", description: "", party: "David Hunter" },
-  { caseId: "NTN-159901-ABS-01", label: "Absence Case - NTN-159901-ABS-01", description: "Pregnancy/Maternity | Birth Disability : 01/02/2026-02/24/2026, Continuous", party: "David Hunter" },
-  { caseId: "NTN-148123-ABS-01", label: "Absence Case - NTN-148123-ABS-01", description: "Serious Health Condition - Employee | Not Work Related : 11/02/2025 (Status: Known, Pattern: Continuous)", party: "EDNA TIERTEST1" },
-  { caseId: "NTN-165775", label: "Notification - NTN-165775", description: "", party: "Erica Alexander" },
-];
+// Master Plan is the one non-Process2 platform fixture the captured intake popup
+// shows; it carries an explicit members route while every DB-derived row routes
+// by its own case id.
+const MASTER_PLAN_INTAKE: ResultRow = {
+  caseId: "18489",
+  label: "Master Plan - 18489",
+  description: "",
+  party: "Fifth Third Bank National Association",
+  route: MASTER_PLAN_ROUTE,
+};
 
-const INTAKE_RESULTS: readonly ResultRow[] = [
-  { caseId: "NTN-165773-GDC-02", label: "Group Disability Claim - NTN-165773-GDC-02", description: "Sickness : 02/10/2026", party: "Zachary Alexander" },
-  { caseId: "NTN-165773-ABS-01", label: "Absence Case - NTN-165773-ABS-01", description: "Serious Health Condition - Employee | Not Work Related | Sickness : 02/10/2026-03/02/2026 (Status: Estimated, Pattern: Continuous)", party: "Zachary Alexander" },
-  { caseId: "NTN-165773", label: "Notification - NTN-165773", description: "Sickness, treatment required for a medical condition or any other medical procedure", party: "Zachary Alexander" },
-  { caseId: "NTN-165772-ABS-01", label: "Absence Case - NTN-165772-ABS-01", description: "Serious Health Condition - Employee | Not Work Related | Sickness : 04/01/2026-06/01/2026 (Status: Not Known, Pattern: Continuous)", party: "Beth Alexander" },
-  { caseId: "NTN-165772-GDC-02", label: "Group Disability Claim - NTN-165772-GDC-02", description: "Sickness : 04/01/2026", party: "Beth Alexander" },
-  { caseId: "18489", label: "Master Plan - 18489", description: "", party: "Fifth Third Bank National Association", route: MASTER_PLAN_ROUTE },
-  { caseId: "NTN-165772", label: "Notification - NTN-165772", description: "Sickness, treatment required for a medical condition or any other medical procedure", party: "Beth Alexander" },
-  { caseId: "NTN-165771-GDC-02", label: "Group Disability Claim - NTN-165771-GDC-02", description: "Accident : 02/12/2026", party: "Erica Alexander" },
-  { caseId: "NTN-165571", label: "Notification - NTN-165571", description: "Sickness, treatment required for a medical condition or any other medical procedure", party: "Dustin Adams" },
-  { caseId: "NTN-165335", label: "Notification - NTN-165335", description: "Accommodation required to remain at work", party: "David Hunter" },
-];
+const toResultRow = (row: RecentCaseRow): ResultRow => ({
+  caseId: row.caseId,
+  label: row.label,
+  description: row.description,
+  party: row.partyName,
+});
+
+const useRecentRows = (): readonly ResultRow[] => {
+  const [rows, setRows] = useState<readonly ResultRow[]>([]);
+  useEffect(() => { void loadRecentRows(setRows); }, []);
+  return rows;
+};
+
+const loadRecentRows = async (set: (rows: readonly ResultRow[]) => void): Promise<void> => {
+  const result = await getRecentCases();
+  if (result.ok) set(result.value.map(toResultRow));
+};
 
 function PopupResults({ onPick }: { readonly onPick: () => void }) {
   const navigate = useNavigate();
+  const recent = useRecentRows();
+  const rows = [MASTER_PLAN_INTAKE, ...recent];
   return <div className="fx-search-body fx-search-body--popup">
-    <ResultsTable rows={INTAKE_RESULTS} selectedId="18489" onOpen={(route) => openResult(route, navigate, onPick)} />
+    <ResultsTable rows={rows} onOpen={(route) => openResult(route, navigate, onPick)} />
   </div>;
 }
 
 function RecentResults({ onPick }: { readonly onPick: () => void }) {
   const navigate = useNavigate();
+  const rows = useRecentRows();
   return (
     <div className="fx-search-body">
-      <ResultsTable rows={RECENT_RESULTS} selectedId="NTN-159898" onOpen={(route) => openResult(route, navigate, onPick)} />
+      <ResultsTable rows={rows} onOpen={(route) => openResult(route, navigate, onPick)} />
     </div>
   );
 }
@@ -187,24 +197,19 @@ const openResult = (route: string, navigate: (to: string) => void, onPick: () =>
 
 function CaseSearch() {
   const [rows, setRows] = useState<readonly SearchRow[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
   const navigate = useNavigate();
   return (
     <div className="fx-search-body">
       <CaseFields onSearch={(term) => runCaseSearch(term, setRows)} />
-      {rows.length > 0 && <CaseResults rows={rows} selected={selected} onSelect={(row) => openCase(row, navigate, setSelected)} />}
+      {rows.length > 0 && <CaseResults rows={rows} onSelect={(row) => navigate(rowRoute(row))} />}
     </div>
   );
 }
 
-const openCase = (row: SearchRow, navigate: (to: string) => void, select: (id: string) => void): void =>
-  row.route ? navigate(row.route) : select(row.caseId);
-
-function CaseResults({ rows, selected, onSelect }: { readonly rows: readonly SearchRow[]; readonly selected: string | null; readonly onSelect: (row: SearchRow) => void }) {
+function CaseResults({ rows, onSelect }: { readonly rows: readonly SearchRow[]; readonly onSelect: (row: SearchRow) => void }) {
   return (
     <div className="fx-results-block">
       <p className="fx-results-title">Search Results</p>
-      {selected && <p className="fx-status" role="status">Selected {selected}</p>}
       <table className="fx-table fx-results-table">
         <thead><tr><th>Case</th><th>Description</th><th>Default Party</th></tr></thead>
         <tbody>{rows.map((row) => (
@@ -221,7 +226,12 @@ function CaseResults({ rows, selected, onSelect }: { readonly rows: readonly Sea
 
 const runCaseSearch = async (term: string, set: (rows: readonly SearchRow[]) => void): Promise<void> => {
   const result = await searchCases(term);
-  if (result.ok) set([MASTER_PLAN, ...result.value]);
+  if (result.ok) set(matchesMasterPlan(term) ? [MASTER_PLAN, ...result.value] : result.value);
+};
+
+const matchesMasterPlan = (term: string): boolean => {
+  const query = term.trim().toLowerCase();
+  return query.includes("18489") || query.includes("master plan");
 };
 
 function CaseFields({ onSearch }: { readonly onSearch: (term: string) => void }) {

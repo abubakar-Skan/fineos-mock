@@ -9,6 +9,9 @@ import {
   type ExecutionStatus,
   type IntakeComponentScope,
   type IntakeType,
+  type PartyProfileDetails,
+  type Process2Dossier,
+  type RecentCaseRow,
   type Submission,
 } from "@fineos/contracts";
 import type {
@@ -48,6 +51,7 @@ interface PartyRow {
   phone: string | null;
   home_phone: string | null;
   email: string | null;
+  details_json: string;
 }
 
 interface CaseSummaryRow {
@@ -128,6 +132,7 @@ export const createCaseRepository = (db: Db): CaseRepository => ({
   findGdcCase: (id) => findGdcCase(db, id),
   findComponentCases: (id) => findComponentCases(db, id),
   search: (term) => searchCases(db, term),
+  recent: () => recentCases(db),
   startExecution: (caseId) => db.transaction(() => runStart(db, caseId))(),
   finishExecution: (runId, status) => finishRun(db, runId, status),
   commitOutcome: (commit) => db.transaction(() => commitOutcome(db, commit))(),
@@ -168,6 +173,40 @@ const searchCases = (db: Db, term: string): readonly CaseSummaryRecord[] =>
 const SEARCH_CASES_SQL =
   "SELECT n.id, p.full_name, n.scope, n.status FROM notification n " +
   "JOIN party p ON p.id = n.party_id WHERE n.id LIKE ? OR p.full_name LIKE ? ORDER BY n.id";
+
+interface RecentNotifRow {
+  id: string;
+  full_name: string;
+  condition_description: string | null;
+}
+
+const RECENT_NOTIF_SQL =
+  "SELECT n.id, p.full_name, n.condition_description FROM notification n " +
+  "JOIN party p ON p.id = n.party_id ORDER BY n.id";
+
+// Flattens exactly the seeded roots plus the Absence/GDC subcases that actually
+// exist, so every recent row is a real, clickable case record.
+const recentCases = (db: Db): readonly RecentCaseRow[] =>
+  (db.prepare(RECENT_NOTIF_SQL).all() as RecentNotifRow[]).flatMap((n) => recentGroup(db, n));
+
+const recentGroup = (db: Db, n: RecentNotifRow): readonly RecentCaseRow[] => [
+  { caseId: toCaseId(n.id), kind: "notification", label: `Notification - ${n.id}`, description: n.condition_description ?? "", partyName: n.full_name },
+  ...recentAbsence(db, n),
+  ...recentGdc(db, n),
+];
+
+const recentAbsence = (db: Db, n: RecentNotifRow): readonly RecentCaseRow[] => {
+  const row = db.prepare("SELECT * FROM absence_case WHERE notification_id = ?").get(n.id) as AbsenceCaseRow | undefined;
+  if (!row) return [];
+  const description = [row.leave_reason, row.condition_description, row.work_state].filter(Boolean).join(" | ");
+  return [{ caseId: toCaseId(row.id), kind: "absence", label: `Absence Case - ${row.id}`, description, partyName: n.full_name }];
+};
+
+const recentGdc = (db: Db, n: RecentNotifRow): readonly RecentCaseRow[] => {
+  const row = db.prepare("SELECT * FROM gdc_case WHERE notification_id = ?").get(n.id) as GdcCaseRow | undefined;
+  if (!row) return [];
+  return [{ caseId: toCaseId(row.id), kind: "gdc", label: `Group Disability Claim - ${row.id}`, description: row.diagnosis_code ?? "", partyName: n.full_name }];
+};
 
 const insertDraft = (db: Db, input: NotificationDraftRow): CaseId => {
   const id = nextNotificationId(db);
@@ -416,7 +455,25 @@ const toParty = (row: PartyRow): PartyRecord => ({
   phone: row.phone,
   homePhone: row.home_phone,
   email: row.email,
+  details: parseDetails(row.details_json),
 });
+
+// An empty object (created providers, retained non-case parties) has no typed
+// profile, so it maps to null rather than a hollow details payload.
+const parseDetails = (json: string): PartyProfileDetails | null => {
+  const value = safeParse(json);
+  return value && Object.keys(value).length > 0 ? (value as unknown as PartyProfileDetails) : null;
+};
+
+const parseDossier = (json: string): Process2Dossier | null => {
+  const value = safeParse(json);
+  return value && "caseId" in value && "summary" in value ? (value as unknown as Process2Dossier) : null;
+};
+
+const safeParse = (json: string): Record<string, unknown> | null => {
+  const value = JSON.parse(json) as unknown;
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+};
 
 const toCaseSummary = (row: CaseSummaryRow): CaseSummaryRecord => ({
   caseId: toCaseId(row.id),
@@ -440,6 +497,7 @@ const toNotification = (row: NotificationRow): NotificationRecord => ({
   diagnosisCode: row.diagnosis_code ?? undefined,
   providerPartyId: row.provider_party_id ? toPartyId(row.provider_party_id) : undefined,
   status: row.status,
+  dossier: parseDossier(row.sections_json),
 });
 
 const toDraftScope = (scope: IntakeComponentScope | null): DraftComponentScope =>

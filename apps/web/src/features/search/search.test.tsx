@@ -12,6 +12,14 @@ const aParty = (over: Record<string, unknown> = {}) => ({
   dateOfBirth: "1980-10-20", employer: "ACEDEX", phone: null, homePhone: null, email: null, ...over,
 });
 
+const aCaseSummary = (over: Record<string, unknown> = {}) => ({
+  caseId: "NTN-159898",
+  partyName: "David Hunter",
+  scope: { kind: "selected", value: "leave_and_gdc" },
+  status: "SUBMITTED",
+  ...over,
+});
+
 const rootFromCaseUrl = (input: string): string => {
   const match = input.match(/\/cases\/([^?]+)/);
   return match?.[1] ? decodeURIComponent(match[1]) : "";
@@ -34,7 +42,7 @@ const detailsFor = (rootId: string) => ({
 
 const bodyFor = (input: string) => {
   if (input.includes("/parties/search")) return ok([aParty()]);
-  if (input.includes("/cases/search")) return ok([]);
+  if (input.includes("/cases/search")) return ok([aCaseSummary()]);
   if (input.includes("/cases/")) return ok(detailsFor(rootFromCaseUrl(input)));
   if (input.includes("/parties/")) return ok(aParty());
   return ok(null);
@@ -110,6 +118,19 @@ describe("Side-navigation search shortcuts", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog", { name: /case search/i })).toBeNull();
     expect(screen.getByRole("heading", { name: /dashboard/i })).toBeTruthy();
+  });
+});
+
+describe("Case tab search routing", () => {
+  it("opens the matching notification without injecting the Master Plan", async () => {
+    const user = userEvent.setup();
+    renderAt("/dashboard");
+    const dialog = await openViaNav(user, /cases/i);
+    await user.type(within(dialog).getByRole("textbox", { name: /case number/i }), "NTN-159898");
+    await user.click(within(dialog).getByRole("button", { name: /^search$/i }));
+    expect(within(dialog).queryByRole("button", { name: /master plan/i })).toBeNull();
+    await user.click(within(dialog).getByRole("button", { name: "NTN-159898" }));
+    expect(await screen.findByRole("heading", { name: /notification NTN-159898/i })).toBeTruthy();
   });
 });
 

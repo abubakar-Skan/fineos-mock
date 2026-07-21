@@ -28,8 +28,8 @@ const searchGeneratedCase = async (page: import("@playwright/test").Page, draftI
   await dialog.getByRole("button", { name: /^search$/i }).click();
   await expect(dialog.getByRole("button", { name: draftId })).toBeVisible();
   await dialog.getByRole("button", { name: draftId }).click();
-  await expect(dialog.getByText(`Selected ${draftId}`)).toBeVisible();
-  await dialog.getByRole("button", { name: /^ok$/i }).click();
+  await expect(page).toHaveURL(new RegExp(`/cases/${draftId}/general$`));
+  await expect(page.getByRole("heading", { name: new RegExp(draftId) })).toBeVisible();
 };
 
 // Default agent-first mode: the generated case opens as a manual record with no
