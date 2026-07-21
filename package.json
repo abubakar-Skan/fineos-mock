@@ -1,0 +1,31 @@
+{
+  "name": "fineos-adminsuite-mock",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:visual": "echo 'test:visual will be implemented in a later task' && exit 1",
+    "db:reset": "node --eval \"import('./apps/api/src/infrastructure/database.ts').then((m) => m.resetToSeededFile())\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
+    "@types/pngjs": "^6.0.5",
+    "eslint": "^10.7.0",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
+  }
+}

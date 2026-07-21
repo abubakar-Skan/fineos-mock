@@ -1,0 +1,17 @@
+export type ApiErrorCode =
+  | "invalid_request"
+  | "invalid_credentials"
+  | "party_not_found"
+  | "unknown_section"
+  | "invalid_section"
+  | "invalid_date"
+  | "invalid_date_range"
+  | "provider_not_found"
+  | "invalid_provider_type"
+  | "component_scope_required"
+  | "already_submitted"
+  | "case_not_found"
+  | "execution_in_progress"
+  | "case_already_terminal"
+  | "missing_diagnosis_code"
+  | "invalid_decision_override";

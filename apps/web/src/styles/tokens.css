@@ -1,0 +1,40 @@
+:root {
+  --fx-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --fx-font-size: 13px;
+
+  --fx-header-bg: #1c5a7c;
+  --fx-header-fg: #ffffff;
+  --fx-header-search-bg: #14496a;
+
+  --fx-sidenav-bg: #1b2c3e;
+  --fx-sidenav-fg: #c7d4df;
+  --fx-sidenav-active: #2a4359;
+  --fx-sidenav-accent: #b32a2a;
+
+  --fx-page-bg: #f3f4f6;
+  --fx-panel-bg: #ffffff;
+  --fx-border: #d7dce2;
+  --fx-border-strong: #b9c1cb;
+
+  --fx-text: #2b2f33;
+  --fx-muted: #6b7178;
+  --fx-heading: #1f6ea5;
+  --fx-link: #1a6fb5;
+
+  --fx-primary: #2b7099;
+  --fx-primary-hover: #235d80;
+  --fx-primary-fg: #ffffff;
+  --fx-button-dark: #33475b;
+
+  --fx-record-band: #dfe7ee;
+  --fx-record-subband: #cddbe6;
+  --fx-row-alt: #f6f8fa;
+  --fx-row-selected: #cfe0ec;
+  --fx-bar: #2f9e8f;
+
+  --fx-focus: #1a6fb5;
+  --fx-error: #b3261e;
+
+  --fx-login-header: #2e7ca1;
+  --fx-login-card: #e4e4e4;
+}

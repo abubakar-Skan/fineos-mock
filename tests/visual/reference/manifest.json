@@ -1,0 +1,642 @@
+[
+  {
+    "id": "intake-s0-0",
+    "flow": "intake",
+    "step": "s0",
+    "state": 0,
+    "width": 1540,
+    "height": 1052,
+    "caption": "FINEOS Sign-in page (01:36)",
+    "file": "intake/s0-0.png"
+  },
+  {
+    "id": "intake-s1-0",
+    "flow": "intake",
+    "step": "s1",
+    "state": 0,
+    "width": 1545,
+    "height": 1040,
+    "caption": "Dashboard — My Cases / Team Cases by User (02:00)",
+    "file": "intake/s1-0.png"
+  },
+  {
+    "id": "intake-s1-1",
+    "flow": "intake",
+    "step": "s1",
+    "state": 1,
+    "width": 1545,
+    "height": 1040,
+    "caption": "Case Search — results (02:12)",
+    "file": "intake/s1-1.png"
+  },
+  {
+    "id": "intake-s1-2",
+    "flow": "intake",
+    "step": "s1",
+    "state": 2,
+    "width": 1545,
+    "height": 1040,
+    "caption": "Master Plan 18489 — member list (02:14)",
+    "file": "intake/s1-2.png"
+  },
+  {
+    "id": "intake-s1-3",
+    "flow": "intake",
+    "step": "s1",
+    "state": 3,
+    "width": 1560,
+    "height": 1040,
+    "caption": "Party — Erica Alexander, Profile (03:06)",
+    "file": "intake/s1-3.png"
+  },
+  {
+    "id": "intake-s2-0",
+    "flow": "intake",
+    "step": "s2",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Notification Details — form populated (03:10)",
+    "file": "intake/s2-0.png"
+  },
+  {
+    "id": "intake-s2-1",
+    "flow": "intake",
+    "step": "s2",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Notification source dropdown open (08:38)",
+    "file": "intake/s2-1.png"
+  },
+  {
+    "id": "intake-s3-0",
+    "flow": "intake",
+    "step": "s3",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Occupation Details — populated (06:38)",
+    "file": "intake/s3-0.png"
+  },
+  {
+    "id": "intake-s3-1",
+    "flow": "intake",
+    "step": "s3",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Member address & Contact Details (06:05)",
+    "file": "intake/s3-1.png"
+  },
+  {
+    "id": "intake-s3-2",
+    "flow": "intake",
+    "step": "s3",
+    "state": 2,
+    "width": 1500,
+    "height": 945,
+    "caption": "Member Details — Create new Member (06:32)",
+    "file": "intake/s3-2.png"
+  },
+  {
+    "id": "intake-s4-0",
+    "flow": "intake",
+    "step": "s4",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Type of Request — options (07:06)",
+    "file": "intake/s4-0.png"
+  },
+  {
+    "id": "intake-s4-1",
+    "flow": "intake",
+    "step": "s4",
+    "state": 1,
+    "width": 1760,
+    "height": 945,
+    "caption": "Sub-options expanded (09:18)",
+    "file": "intake/s4-1.png"
+  },
+  {
+    "id": "intake-s5-0",
+    "flow": "intake",
+    "step": "s5",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Reason for Absence — initial (10:04)",
+    "file": "intake/s5-0.png"
+  },
+  {
+    "id": "intake-s5-1",
+    "flow": "intake",
+    "step": "s5",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Reason for Absence — completed (11:36)",
+    "file": "intake/s5-1.png"
+  },
+  {
+    "id": "intake-s6-0",
+    "flow": "intake",
+    "step": "s6",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Leave Periods — selection (11:44)",
+    "file": "intake/s6-0.png"
+  },
+  {
+    "id": "intake-s6-1",
+    "flow": "intake",
+    "step": "s6",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Fixed Time Off — entry form (13:06)",
+    "file": "intake/s6-1.png"
+  },
+  {
+    "id": "intake-s6-2",
+    "flow": "intake",
+    "step": "s6",
+    "state": 2,
+    "width": 1500,
+    "height": 945,
+    "caption": "Calendar date picker — Feb 2026 (13:32)",
+    "file": "intake/s6-2.png"
+  },
+  {
+    "id": "intake-s6-3",
+    "flow": "intake",
+    "step": "s6",
+    "state": 3,
+    "width": 1500,
+    "height": 945,
+    "caption": "Add Absence Period modal (14:42)",
+    "file": "intake/s6-3.png"
+  },
+  {
+    "id": "intake-s6-4",
+    "flow": "intake",
+    "step": "s6",
+    "state": 4,
+    "width": 1500,
+    "height": 945,
+    "caption": "Fixed Time Off saved + Return to Work (15:24)",
+    "file": "intake/s6-4.png"
+  },
+  {
+    "id": "intake-s7-0",
+    "flow": "intake",
+    "step": "s7",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Work Schedule / Work Pattern (15:40)",
+    "file": "intake/s7-0.png"
+  },
+  {
+    "id": "intake-s7-1",
+    "flow": "intake",
+    "step": "s7",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Employment Leave Details (16:02)",
+    "file": "intake/s7-1.png"
+  },
+  {
+    "id": "intake-s8-0",
+    "flow": "intake",
+    "step": "s8",
+    "state": 0,
+    "width": 1860,
+    "height": 922,
+    "caption": "Additional Absence Details — questions (16:18)",
+    "file": "intake/s8-0.png"
+  },
+  {
+    "id": "intake-s8-1",
+    "flow": "intake",
+    "step": "s8",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Medical condition dropdown open (17:48)",
+    "file": "intake/s8-1.png"
+  },
+  {
+    "id": "intake-s8-2",
+    "flow": "intake",
+    "step": "s8",
+    "state": 2,
+    "width": 1500,
+    "height": 945,
+    "caption": "Additional detail + Hospitalization (18:40)",
+    "file": "intake/s8-2.png"
+  },
+  {
+    "id": "intake-s8-3",
+    "flow": "intake",
+    "step": "s8",
+    "state": 3,
+    "width": 1500,
+    "height": 945,
+    "caption": "Hospitalization — overnight-stay dropdown (19:18)",
+    "file": "intake/s8-3.png"
+  },
+  {
+    "id": "intake-s9-0",
+    "flow": "intake",
+    "step": "s9",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Disability Incident Details (20:45)",
+    "file": "intake/s9-0.png"
+  },
+  {
+    "id": "intake-s9-1",
+    "flow": "intake",
+    "step": "s9",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Claim Employment Details (22:38)",
+    "file": "intake/s9-1.png"
+  },
+  {
+    "id": "intake-s10-0",
+    "flow": "intake",
+    "step": "s10",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Policy Details (22:42)",
+    "file": "intake/s10-0.png"
+  },
+  {
+    "id": "intake-s11-0",
+    "flow": "intake",
+    "step": "s11",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Earnings Details (23:00)",
+    "file": "intake/s11-0.png"
+  },
+  {
+    "id": "intake-s12-0",
+    "flow": "intake",
+    "step": "s12",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Choose the Party to have a role of Medical Provider (23:36)",
+    "file": "intake/s12-0.png"
+  },
+  {
+    "id": "intake-s12-1",
+    "flow": "intake",
+    "step": "s12",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Medical Details — No medical provider (25:16)",
+    "file": "intake/s12-1.png"
+  },
+  {
+    "id": "intake-s12-2",
+    "flow": "intake",
+    "step": "s12",
+    "state": 2,
+    "width": 1500,
+    "height": 945,
+    "caption": "Medical Details — full form (26:56)",
+    "file": "intake/s12-2.png"
+  },
+  {
+    "id": "intake-s12-3",
+    "flow": "intake",
+    "step": "s12",
+    "state": 3,
+    "width": 1500,
+    "height": 945,
+    "caption": "Diagnosis Codes & Hospitalization (27:39)",
+    "file": "intake/s12-3.png"
+  },
+  {
+    "id": "intake-s13-0",
+    "flow": "intake",
+    "step": "s13",
+    "state": 0,
+    "width": 1500,
+    "height": 945,
+    "caption": "Confirmation — notification submitted (28:20)",
+    "file": "intake/s13-0.png"
+  },
+  {
+    "id": "intake-s13-1",
+    "flow": "intake",
+    "step": "s13",
+    "state": 1,
+    "width": 1500,
+    "height": 945,
+    "caption": "Notification Summary — Fixed Time Off & Leave Plans (28:24)",
+    "file": "intake/s13-1.png"
+  },
+  {
+    "id": "intake-s13-2",
+    "flow": "intake",
+    "step": "s13",
+    "state": 2,
+    "width": 1500,
+    "height": 945,
+    "caption": "Leave Plan(s) & Plan Eligibility Details (28:26)",
+    "file": "intake/s13-2.png"
+  },
+  {
+    "id": "intake-s13-3",
+    "flow": "intake",
+    "step": "s13",
+    "state": 3,
+    "width": 1500,
+    "height": 945,
+    "caption": "Challenge Wrap-Up — Group Disability Claim NTN-165775-GDC-02 (28:28)",
+    "file": "intake/s13-3.png"
+  },
+  {
+    "id": "execution-s1-0",
+    "flow": "execution",
+    "step": "s1",
+    "state": 0,
+    "width": 1500,
+    "height": 905,
+    "caption": "Dashboard — My Cases / Team Cases by User (66:07)",
+    "file": "execution/s1-0.png"
+  },
+  {
+    "id": "execution-s1-1",
+    "flow": "execution",
+    "step": "s1",
+    "state": 1,
+    "width": 1450,
+    "height": 905,
+    "caption": "Case Search — Case tab (14:25)",
+    "file": "execution/s1-1.png"
+  },
+  {
+    "id": "execution-s1-2",
+    "flow": "execution",
+    "step": "s1",
+    "state": 2,
+    "width": 1450,
+    "height": 905,
+    "caption": "Case Search — Recent results → open NTN-159898 (13:58)",
+    "file": "execution/s1-2.png"
+  },
+  {
+    "id": "execution-s2-0",
+    "flow": "execution",
+    "step": "s2",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "Notification NTN-159898 — Documents For Case (14:20)",
+    "file": "execution/s2-0.png"
+  },
+  {
+    "id": "execution-s3-0",
+    "flow": "execution",
+    "step": "s3",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "Notification NTN-159898 — Case Map (14:52)",
+    "file": "execution/s3-0.png"
+  },
+  {
+    "id": "execution-s4-0",
+    "flow": "execution",
+    "step": "s4",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "QuestionPathClaim eForm — intake answers (26:00)",
+    "file": "execution/s4-0.png"
+  },
+  {
+    "id": "execution-s5-0",
+    "flow": "execution",
+    "step": "s5",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "Party Profile — David Hunter, Personal Details (38:12)",
+    "file": "execution/s5-0.png"
+  },
+  {
+    "id": "execution-s5-1",
+    "flow": "execution",
+    "step": "s5",
+    "state": 1,
+    "width": 1450,
+    "height": 905,
+    "caption": "Contact Details — phone & email (35:23)",
+    "file": "execution/s5-1.png"
+  },
+  {
+    "id": "execution-s5-2",
+    "flow": "execution",
+    "step": "s5",
+    "state": 2,
+    "width": 1450,
+    "height": 905,
+    "caption": "Communication Preferences (40:23)",
+    "file": "execution/s5-2.png"
+  },
+  {
+    "id": "execution-s6-0",
+    "flow": "execution",
+    "step": "s6",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "Absence Case ABS-01 — Leave Details / Leave Plans (75:10)",
+    "file": "execution/s6-0.png"
+  },
+  {
+    "id": "execution-s6-1",
+    "flow": "execution",
+    "step": "s6",
+    "state": 1,
+    "width": 1450,
+    "height": 905,
+    "caption": "Absence Hub — Absence Calendar & Return-to-Work, ‘Overdue’ (72:21)",
+    "file": "execution/s6-1.png"
+  },
+  {
+    "id": "execution-s6-2",
+    "flow": "execution",
+    "step": "s6",
+    "state": 2,
+    "width": 1450,
+    "height": 905,
+    "caption": "Absence Case ABS-01 — Employment details (74:49)",
+    "file": "execution/s6-2.png"
+  },
+  {
+    "id": "execution-s7-0",
+    "flow": "execution",
+    "step": "s7",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "GDC-02 — Claim Hub / Claim Summary (45:59)",
+    "file": "execution/s7-0.png"
+  },
+  {
+    "id": "execution-s7-1",
+    "flow": "execution",
+    "step": "s7",
+    "state": 1,
+    "width": 1450,
+    "height": 905,
+    "caption": "GDC-02 — Medical Details (48:20)",
+    "file": "execution/s7-1.png"
+  },
+  {
+    "id": "execution-s7-2",
+    "flow": "execution",
+    "step": "s7",
+    "state": 2,
+    "width": 1450,
+    "height": 905,
+    "caption": "GDC-02 — Medical Details, scrolled (50:14)",
+    "file": "execution/s7-2.png"
+  },
+  {
+    "id": "execution-s7-3",
+    "flow": "execution",
+    "step": "s7",
+    "state": 3,
+    "width": 1450,
+    "height": 905,
+    "caption": "GDC-02 — Condition Category dropdown (49:20)",
+    "file": "execution/s7-3.png"
+  },
+  {
+    "id": "execution-s8-0",
+    "flow": "execution",
+    "step": "s8",
+    "state": 0,
+    "width": 1230,
+    "height": 905,
+    "caption": "UNUM Inside / uKnow — GetAnswer knowledge base (52:00)",
+    "file": "execution/s8-0.png"
+  },
+  {
+    "id": "execution-s9-0",
+    "flow": "execution",
+    "step": "s9",
+    "state": 0,
+    "width": 1180,
+    "height": 905,
+    "caption": "Google — ICD-10 code for knee surgery (54:30)",
+    "file": "execution/s9-0.png"
+  },
+  {
+    "id": "execution-s9-1",
+    "flow": "execution",
+    "step": "s9",
+    "state": 1,
+    "width": 1200,
+    "height": 905,
+    "caption": "ICD10Data.com — 2026 ICD-10-CM/PCS reference (52:02)",
+    "file": "execution/s9-1.png"
+  },
+  {
+    "id": "execution-s9-2",
+    "flow": "execution",
+    "step": "s9",
+    "state": 2,
+    "width": 1450,
+    "height": 905,
+    "caption": "ICD Codes: Reference Sheet — internal (52:38)",
+    "file": "execution/s9-2.png"
+  },
+  {
+    "id": "execution-s9-3",
+    "flow": "execution",
+    "step": "s9",
+    "state": 3,
+    "width": 1450,
+    "height": 905,
+    "caption": "Common ICD-10 Codes Chart (54:33)",
+    "file": "execution/s9-3.png"
+  },
+  {
+    "id": "execution-s10-0",
+    "flow": "execution",
+    "step": "s10",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "Diagnosis Codes — code type-ahead (51:40)",
+    "file": "execution/s10-0.png"
+  },
+  {
+    "id": "execution-s10-1",
+    "flow": "execution",
+    "step": "s10",
+    "state": 1,
+    "width": 1450,
+    "height": 905,
+    "caption": "Diagnosis Codes — Primary diagnosis entered (62:01)",
+    "file": "execution/s10-1.png"
+  },
+  {
+    "id": "execution-s11-0",
+    "flow": "execution",
+    "step": "s11",
+    "state": 0,
+    "width": 1450,
+    "height": 905,
+    "caption": "Choose the Party to have a role of Medical Provider (62:08)",
+    "file": "execution/s11-0.png"
+  },
+  {
+    "id": "execution-s11-1",
+    "flow": "execution",
+    "step": "s11",
+    "state": 1,
+    "width": 1450,
+    "height": 905,
+    "caption": "Provider search — Person Search Results (63:00)",
+    "file": "execution/s11-1.png"
+  },
+  {
+    "id": "execution-s11-2",
+    "flow": "execution",
+    "step": "s11",
+    "state": 2,
+    "width": 1450,
+    "height": 905,
+    "caption": "Provider Details — Travis Larson, read-only (63:24)",
+    "file": "execution/s11-2.png"
+  },
+  {
+    "id": "execution-s11-3",
+    "flow": "execution",
+    "step": "s11",
+    "state": 3,
+    "width": 1450,
+    "height": 905,
+    "caption": "Add Person — create new party (64:27)",
+    "file": "execution/s11-3.png"
+  }
+]
