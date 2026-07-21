@@ -1,1 +1,1 @@
-{"id":"execution-s3-0","flow":"execution","threshold":0.1,"passed":true,"sourceOnly":false,"ratio":0.09924356786558151,"diffPixels":60483,"comparedWidth":1180,"comparedHeight":520,"maskedPixels":4160}
+{"id":"execution-s3-0","flow":"execution","threshold":0.1,"passed":true,"sourceOnly":false,"ratio":0.09897118666316619,"diffPixels":60317,"comparedWidth":1180,"comparedHeight":520,"maskedPixels":4160}

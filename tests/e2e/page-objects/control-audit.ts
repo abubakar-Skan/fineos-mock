@@ -1510,6 +1510,8 @@ const CASE_COMPONENTS = [
   control("button", "STD Benefit"),
 ] as const;
 
+// Default agent-first mode: no Run Case Execution shortcut. The external agent
+// drives the manual case workflow itself.
 const CASE_ACTIONS = [
   control("button", "Add Sub Case"),
   control("button", "Correspondence"),
@@ -1517,7 +1519,6 @@ const CASE_ACTIONS = [
   control("button", "Add eForm"),
   control("button", "Add Participant"),
   control("button", "Surround UI"),
-  control("button", "Run Case Execution"),
 ] as const;
 
 const ABSENCE_ACTIONS = [control("button", "Copy Case"), ...CASE_ACTIONS] as const;
@@ -1565,7 +1566,6 @@ const exerciseCaseActions = async (page: Page): Promise<void> => {
     await expect(page.getByRole("status")).toHaveText(`${action} started.`);
   }
   await exerciseCaseComponents(page);
-  await exerciseCaseExecution(page);
 };
 
 const exerciseCaseComponents = async (page: Page): Promise<void> => {
@@ -1585,12 +1585,6 @@ const clickCaseComponent = async (
   await openCase(page, ERICA_CASE, "general");
   await page.getByRole("button", { name, exact: true }).click();
   await expect(page).toHaveURL(url);
-};
-
-const exerciseCaseExecution = async (page: Page): Promise<void> => {
-  await openCase(page, ERICA_CASE, "general");
-  await page.getByRole("button", { name: "Run Case Execution" }).click();
-  await expect(page.getByRole("alert")).toContainText("required condition details are missing");
 };
 
 const auditNotificationCase = async (page: Page): Promise<void> => {

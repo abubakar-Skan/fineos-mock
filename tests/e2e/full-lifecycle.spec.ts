@@ -5,8 +5,8 @@ import {
   startEricaNotification,
 } from "./helpers";
 
-test.describe("Full notification-to-execution lifecycle", () => {
-  test("signs in, completes Erica intake, submits, searches the generated case, and executes it", async ({ page }) => {
+test.describe("Full notification-to-agent-handoff lifecycle", () => {
+  test("signs in, completes Erica intake, submits, searches the generated case, and hands off to the agent", async ({ page, request }) => {
     await signIn(page);
 
     const draftId = await startEricaNotification(page);
@@ -17,7 +17,7 @@ test.describe("Full notification-to-execution lifecycle", () => {
     await expect(page.getByRole("heading", { name: new RegExp(`Group Disability Claim — ${draftId}-GDC-02`) })).toBeVisible();
 
     await searchGeneratedCase(page, draftId);
-    await executeGeneratedCase(page, draftId);
+    await assertAgentModeCase(page, request, draftId);
   });
 });
 
@@ -32,11 +32,17 @@ const searchGeneratedCase = async (page: import("@playwright/test").Page, draftI
   await dialog.getByRole("button", { name: /^ok$/i }).click();
 };
 
-const executeGeneratedCase = async (page: import("@playwright/test").Page, draftId: string): Promise<void> => {
+// Default agent-first mode: the generated case opens as a manual record with no
+// Run Case Execution shortcut, and the execute endpoint does not exist (404).
+// The external Playwright agent drives the case from here.
+const assertAgentModeCase = async (
+  page: import("@playwright/test").Page,
+  request: import("@playwright/test").APIRequestContext,
+  draftId: string,
+): Promise<void> => {
   await page.goto(`/cases/${draftId}/general`);
   await expect(page.getByRole("heading", { name: new RegExp(draftId) })).toBeVisible();
-  await page.getByRole("button", { name: /run case execution/i }).click();
-  const banner = page.getByText(/case execution completed/i);
-  await expect(banner).toBeVisible();
-  await expect(banner).toContainText(/absence and gdc/i);
+  await expect(page.getByRole("button", { name: /run case execution/i })).toHaveCount(0);
+  const res = await request.post(`/api/cases/${draftId}/execute`, { data: {} });
+  expect(res.status()).toBe(404);
 };

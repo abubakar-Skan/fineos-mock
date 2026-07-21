@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
+import { AUTOMATION_SHORTCUTS_ENABLED } from "@fineos/contracts";
 import type { Db } from "./infrastructure/database";
 import {
   createCaseRepository,
@@ -18,6 +19,9 @@ import { registerTestRoutes } from "./boundary/test-routes";
 interface AppOptions {
   readonly resetTestData?: () => void;
   readonly webRoot?: string;
+  // Code-level override for API unit tests only; production passes nothing and
+  // inherits the shared source constant. There is no runtime external override.
+  readonly automationShortcutsEnabled?: boolean;
 }
 
 const API_PREFIX = "/api";
@@ -30,7 +34,11 @@ export const buildApp = (db: Db, options: AppOptions = {}): FastifyInstance => {
   registerSessionRoutes(app);
   registerPartyRoutes(app, createPartyService(parties));
   registerNotificationRoutes(app, createNotificationService({ parties, notifications }));
-  registerCaseRoutes(app, createExecutionService({ notifications, cases, parties }));
+  registerCaseRoutes(
+    app,
+    createExecutionService({ notifications, cases, parties }),
+    options.automationShortcutsEnabled ?? AUTOMATION_SHORTCUTS_ENABLED,
+  );
   registerTestRoutes(app, options.resetTestData);
   if (options.webRoot) serveWebApp(app, options.webRoot);
   return app;

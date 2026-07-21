@@ -17,7 +17,10 @@ const VALID_PASSWORD = "fineos";
 beforeEach(() => {
   db = resetDatabase(":memory:");
   seedDatabase(db);
-  app = buildApp(db);
+  // Orchestration branch coverage lives here, so the shared app opts into the
+  // code-enabled automation shortcuts. Default agent-first behavior (routes
+  // absent → 404) is asserted separately in "Agent-first defaults".
+  app = buildApp(db, { automationShortcutsEnabled: true });
 });
 
 afterEach(async () => {
@@ -595,6 +598,40 @@ describe("Case execution boundary", () => {
     const res = await post("/api/cases/NTN-000000/execute", {});
     expect(res.statusCode).toBe(404);
     expect(res.json()).toMatchObject({ ok: false, error: "case_not_found" });
+  });
+});
+
+describe("Agent-first defaults", () => {
+  let agentApp: FastifyInstance;
+
+  beforeEach(() => {
+    agentApp = buildApp(db);
+  });
+
+  afterEach(async () => {
+    await agentApp.close();
+  });
+
+  it("should not register the execute shortcut route by default", async () => {
+    const res = await agentApp.inject({ method: "POST", url: "/api/cases/NTN-159898/execute", payload: {} });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("should not register the execution-run shortcut route by default", async () => {
+    const res = await agentApp.inject({ method: "GET", url: "/api/cases/NTN-159898/execution-runs/RUN-1" });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("should keep manual case lookup available by default", async () => {
+    const res = await agentApp.inject({ method: "GET", url: "/api/cases/NTN-159898" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ ok: true, value: { notification: { id: "NTN-159898" } } });
+  });
+
+  it("should keep manual case search available by default", async () => {
+    const res = await agentApp.inject({ method: "GET", url: "/api/cases/search?term=165775" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().value[0]).toMatchObject({ caseId: "NTN-165775" });
   });
 });
 

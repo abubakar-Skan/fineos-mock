@@ -3,6 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Link, MemoryRouter } from "react-router-dom";
+
+// This suite covers the code-enabled automation shortcut (Run Case Execution +
+// execution outcome banners), so it forces the shared flag on. Default agent
+// mode (button hidden) is covered in cases.agent-mode.test.tsx.
+vi.mock("@fineos/contracts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@fineos/contracts")>()),
+  AUTOMATION_SHORTCUTS_ENABLED: true,
+}));
+
 import { AppRoutes } from "../../app/router";
 
 const ok = (value: unknown) => ({ ok: true, value });

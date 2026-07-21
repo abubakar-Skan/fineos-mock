@@ -4,6 +4,7 @@ export * from "./notification";
 export * from "./case-execution";
 export * from "./api-errors";
 export * from "./intake-sections";
+export * from "./feature-flags";
 
 export type ApiResult<T, E extends string> =
   | { ok: true; value: T }

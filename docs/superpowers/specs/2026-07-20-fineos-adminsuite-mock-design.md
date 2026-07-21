@@ -128,6 +128,14 @@ Minimal endpoints:
 
 Every endpoint validates at the boundary and returns typed success or error bodies. Expected business failures use discriminated error values rather than exceptions.
 
+### Agent-first mode (default)
+
+A single shared source constant, `AUTOMATION_SHORTCUTS_ENABLED` in `packages/contracts/src/feature-flags.ts`, gates the case-execution automation shortcuts. It defaults to `false` (agent-first mode).
+
+- When `false`: the frontend hides the **Run Case Execution** button and its execution outcome/error banners, and the API does not register `POST /api/cases/:caseId/execute` or `GET /api/cases/:caseId/execution-runs/:runId` (they return an ordinary `404`). The manual case workflow, forms, provider/diagnosis choices, and deterministic lookup pages remain fully available; lookups never auto-fill or auto-run the process.
+- The **only** production way to enable the shortcuts is to change that constant to `true` in source and rebuild/restart — there is no env var, query string, `localStorage`, API, or UI toggle. `buildApp` accepts an explicit code-level `automationShortcutsEnabled` option (defaulting to the shared constant) so API unit tests can still cover the orchestration branch; the production server passes nothing and inherits the constant.
+- Default agent mode deliberately leaves case-execution decisions to the external Playwright agent; the domain/application orchestration stays available behind the flag for explicit code-enabled demos and tests.
+
 ## SQLite Design
 
 Tables:

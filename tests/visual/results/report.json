@@ -135,8 +135,8 @@
     "threshold": 0.1,
     "passed": true,
     "sourceOnly": false,
-    "ratio": 0.09924356786558151,
-    "diffPixels": 60483,
+    "ratio": 0.09897118666316619,
+    "diffPixels": 60317,
     "comparedWidth": 1180,
     "comparedHeight": 520,
     "maskedPixels": 4160
@@ -234,8 +234,8 @@
     "passed": true,
     "sourceOnly": false,
     "note": "Claim Summary three-column relevant region.",
-    "ratio": 0.09412762237762237,
-    "diffPixels": 53841,
+    "ratio": 0.09411538461538461,
+    "diffPixels": 53834,
     "comparedWidth": 800,
     "comparedHeight": 715,
     "maskedPixels": 0

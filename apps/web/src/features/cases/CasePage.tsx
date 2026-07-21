@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams, type NavigateFunction } from "react-router-dom";
+import { AUTOMATION_SHORTCUTS_ENABLED } from "@fineos/contracts";
 import { AppShell } from "../../components/fineos/AppShell";
 import { RecordShell } from "../../components/fineos/RecordShell";
 import { EmptyState } from "../../components/fineos/DataTable";
@@ -221,7 +222,8 @@ function ActionBar({ kind, onRun }: { readonly kind: CaseKind; readonly onRun: (
     {kind === "absence" && <MenuAction label="Copy Case" onNotice={setNotice} />}
     {COMMON_ACTIONS.map((label) => <MenuAction key={label} label={label} onNotice={setNotice} />)}
     <MenuAction label="Surround UI" onNotice={setNotice} message="Surround UI opened." />
-    <button type="button" className="fx-action" onClick={onRun}>Run Case Execution</button>
+    {AUTOMATION_SHORTCUTS_ENABLED &&
+      <button type="button" className="fx-action" onClick={onRun}>Run Case Execution</button>}
     {notice && <p role="status" className="fx-action-notice">{notice}</p>}
   </>;
 }
@@ -325,8 +327,9 @@ function SummaryRail({ kind, details }: { readonly kind: CaseKind; readonly deta
 
 function CaseBody({ ctx, kind, tab, navigate }: { readonly ctx: PanelContext; readonly kind: CaseKind; readonly tab: string; readonly navigate: NavigateFunction }) {
   return <div className="fx-case-content">
-    {ctx.workflow.error && <p role="alert" className="fx-exec-banner fx-exec-banner--escalated">{ctx.workflow.error}</p>}
-    {ctx.workflow.outcome && <ExecutionBanner outcome={ctx.workflow.outcome} />}
+    {AUTOMATION_SHORTCUTS_ENABLED && ctx.workflow.error &&
+      <p role="alert" className="fx-exec-banner fx-exec-banner--escalated">{ctx.workflow.error}</p>}
+    {AUTOMATION_SHORTCUTS_ENABLED && ctx.workflow.outcome && <ExecutionBanner outcome={ctx.workflow.outcome} />}
     <PanelSwitch ctx={ctx} kind={kind} tab={tab} navigate={navigate} />
   </div>;
 }

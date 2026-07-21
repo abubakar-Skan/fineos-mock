@@ -20,9 +20,14 @@ const executeSchema = z.object({
   override: z.string().optional(),
 });
 
-export const registerCaseRoutes = (app: FastifyInstance, execution: ExecutionService): void => {
+export const registerCaseRoutes = (
+  app: FastifyInstance,
+  execution: ExecutionService,
+  automationShortcutsEnabled: boolean,
+): void => {
   app.get("/api/cases/search", (req, reply) => searchCases(req, reply, execution));
   app.get("/api/cases/:caseId", (req, reply) => send(reply, execution.getCase(caseParam(req)), 200, isSoftRequest(req)));
+  if (!automationShortcutsEnabled) return;
   app.post("/api/cases/:caseId/execute", (req, reply) => execute(req, reply, execution));
   app.get("/api/cases/:caseId/execution-runs/:runId", (req, reply) => getRun(req, reply, execution));
 };

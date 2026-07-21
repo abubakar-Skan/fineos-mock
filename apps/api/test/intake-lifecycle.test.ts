@@ -19,7 +19,8 @@ let db: Db;
 beforeEach(() => {
   db = resetDatabase(":memory:");
   seedDatabase(db);
-  app = buildApp(db);
+  // Exercises the execute shortcut, so it opts into the code-enabled option.
+  app = buildApp(db, { automationShortcutsEnabled: true });
 });
 
 afterEach(async () => {

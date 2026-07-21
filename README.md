@@ -27,6 +27,37 @@ One npm workspace, three packages:
 Sign-in is a deterministic mock (shared password, no real identity provider —
 see the `ponytail:` comment in `apps/api/src/application/session-service.ts`).
 
+### Agent-first mode (default) and the automation shortcuts
+
+By default the mock runs in **agent-first mode**: it exposes only the manual
+case workflow (case tabs, forms, provider/diagnosis lookups, deterministic
+lookup pages) and leaves every case-execution decision to the external
+Playwright agent. Nothing auto-fills or auto-runs the process.
+
+Concretely, when the flag is off:
+
+- the **Run Case Execution** button and its execution outcome/error banners are hidden;
+- `POST /api/cases/:caseId/execute` and `GET /api/cases/:caseId/execution-runs/:runId` are **not registered** — they return an ordinary `404` because the routes do not exist.
+
+The one-and-only way to turn the automation shortcuts on in production is to
+edit this single source constant and rebuild/restart:
+
+```ts
+// packages/contracts/src/feature-flags.ts
+export const AUTOMATION_SHORTCUTS_ENABLED = true; // default is false
+```
+
+There is deliberately **no** env var, query string, `localStorage`, API, or UI
+toggle — the constant is the entire control surface. API unit tests may pass an
+explicit code-level `automationShortcutsEnabled` option to `buildApp` (defaulting
+to the shared constant) to cover the orchestration branch; the production server
+passes nothing and inherits the shared constant.
+
+> **Warning:** default agent mode intentionally leaves case-execution decisions
+> (component scope, condition/diagnosis resolution, provider attach/skip) to the
+> external Playwright agent. Enabling the shortcuts bypasses that hand-off and
+> lets the built-in `execute` orchestration make those decisions instead.
+
 ### Data flow
 
 1. Sign in creates a local mock session.
@@ -145,7 +176,9 @@ open tests/visual/results/report.json   # per-state ratio, threshold, pass/fail
 
 ### API endpoints (`apps/api`, prefixed `/api`)
 
-`POST /session` · `GET /parties/search` · `GET /parties/:partyId` · `PATCH /parties/:partyId/contact` · `POST /providers` · `POST /parties/:partyId/notifications` · `PUT /notifications/:draftId/sections/:sectionKey` · `POST /notifications/:draftId/submit` · `GET /cases/search` · `GET /cases/:caseId` · `POST /cases/:caseId/execute` · `GET /cases/:caseId/execution-runs/:runId` · `POST /test/reset` (test-mode only, gated by `FINEOS_TEST_MODE=1`).
+`POST /session` · `GET /parties/search` · `GET /parties/:partyId` · `PATCH /parties/:partyId/contact` · `POST /providers` · `POST /parties/:partyId/notifications` · `PUT /notifications/:draftId/sections/:sectionKey` · `POST /notifications/:draftId/submit` · `GET /cases/search` · `GET /cases/:caseId` · `POST /test/reset` (test-mode only, gated by `FINEOS_TEST_MODE=1`).
+
+The automation-shortcut endpoints `POST /cases/:caseId/execute` and `GET /cases/:caseId/execution-runs/:runId` are only registered when `AUTOMATION_SHORTCUTS_ENABLED` is `true` (see [Agent-first mode](#agent-first-mode-default-and-the-automation-shortcuts)); in the default agent mode they return `404`.
 
 Every endpoint validates at the boundary and returns a typed `{ ok: true, value }` / `{ ok: false, error }` body (`packages/contracts/src/result.ts`); business failures (`party_not_found`, `unknown_section`, `already_submitted`, `case_not_found`, `execution_in_progress`, `case_already_terminal`, `invalid_decision_override`, …) are typed error codes, never thrown exceptions.
 
@@ -171,8 +204,8 @@ Manual path exercising the full generated-case journey (mirrors `tests/e2e/full-
 4. From Erica's profile, start a new notification. Step through the intake wizard: Notification Details → Occupation Details → Type of Request → Reason for Absence → Leave Periods → Work Schedule → Additional Absence Details → Disability Incident Details → Policy Details → Earnings Details → Medical Details (select **Leave and GDC** in Notification Options to activate both component tracks).
 5. Submit. The confirmation page shows the generated root notification ID plus its `-ABS-01` and `-GDC-02` case links.
 6. Open search again, switch to the **Case** tab, and search for the generated root ID (e.g. `NTN-xxxxxx`). Select it from the results and confirm.
-7. Navigate to `/cases/<generated-id>/general` and click **Run Case Execution**.
-8. Confirm the "Case execution completed" banner appears and mentions **Absence and GDC** (both tracks activated and synchronized).
+7. Navigate to `/cases/<generated-id>/general`. In the default **agent-first mode** the case opens as a manual record with no **Run Case Execution** button — this is the hand-off point where the external Playwright agent drives the case (working the tabs, resolving the condition/diagnosis, and attaching a provider itself).
+8. To instead exercise the built-in orchestration, enable the automation shortcuts (see [Agent-first mode](#agent-first-mode-default-and-the-automation-shortcuts)), rebuild/restart, then click **Run Case Execution** and confirm the "Case execution completed" banner mentions **Absence and GDC**.
 
 ## Docker (single container)
 
