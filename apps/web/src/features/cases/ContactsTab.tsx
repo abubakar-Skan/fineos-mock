@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { getParty, updateContact, type PartyView } from "../../app/api";
 
 export function ContactsTab({ partyId }: { readonly partyId: string }) {
@@ -7,6 +8,10 @@ export function ContactsTab({ partyId }: { readonly partyId: string }) {
   return <section><h2 className="fx-section-title">Contact Details</h2>
     <ContactDetails party={party} />
     <ContactEntry party={party} onSaved={setParty} />
+    <div className="fx-party-route-links">
+      <Link className="fx-link" to={`/parties/${party.id}`}>Open claimant profile</Link>
+      <Link className="fx-link" to={`/parties/${party.id}/communication-preferences`}>Communication Preferences</Link>
+    </div>
   </section>;
 }
 

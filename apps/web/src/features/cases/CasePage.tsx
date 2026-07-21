@@ -337,9 +337,22 @@ function CompletedBanner({ outcome }: { readonly outcome: ExecutionResultView })
 function PanelSwitch({ ctx, kind, tab, navigate }: { readonly ctx: PanelContext; readonly kind: CaseKind; readonly tab: string; readonly navigate: NavigateFunction }) {
   const shared = sharedPanel(ctx, tab, navigate);
   if (shared) return shared;
+  if (kind === "notification" && tab === "General") return <GeneralOverview ctx={ctx} navigate={navigate} />;
   if (kind === "absence") return <AbsencePanel ctx={ctx} tab={tab} />;
   if (kind === "gdc") return <GdcPanel ctx={ctx} tab={tab} />;
   return <GenericTab title={tab} />;
+}
+
+function GeneralOverview({ ctx, navigate }: { readonly ctx: PanelContext; readonly navigate: NavigateFunction }) {
+  const components = (ctx.details.dossier.caseMap.children ?? []).filter((node) => node.route);
+  return <section><h2 className="fx-section-title">General</h2>
+    <p>Select the next case component to continue the manual process.</p>
+    <div className="fx-form-actions">
+      <button type="button" className="fx-ghost" onClick={() => navigate(`/cases/${ctx.rootId}/case-map`)}>Open Case Map</button>
+      {components.map((node) => <button type="button" className="fx-primary" key={node.id}
+        onClick={() => navigate(node.route!)}>Open {node.label}</button>)}
+    </div>
+  </section>;
 }
 
 const sharedPanel = (ctx: PanelContext, tab: string, navigate: NavigateFunction): ReactNode => {

@@ -100,7 +100,10 @@ function DocumentLink({ row, onOpen }: { readonly row: CaseDocument; readonly on
 // the document's eForm kind — no per-case reference answers.
 function EformView({ kind, eForms, onBack }: { readonly kind: CaseEFormKind; readonly eForms: readonly CaseEForm[]; readonly onBack: () => void }) {
   const eForm = eForms.find((form) => form.kind === kind);
-  return <section className="fx-eform-view"><h2 className="fx-section-title">{eForm?.title ?? "eForm"}</h2>
+  return <section className="fx-eform-view"><div className="fx-subhead">
+    <h2 className="fx-section-title">{eForm?.title ?? "eForm"}</h2>
+    <button type="button" className="fx-ghost" onClick={onBack}>Back to Documents</button>
+  </div>
     <div className="fx-eform-frame"><strong>Questions</strong>
       <div className="fx-eform">{(eForm?.rows ?? []).map((answer) => (
         <p key={answer.question}><strong>{answer.question}:</strong> {answer.answer}</p>
