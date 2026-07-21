@@ -1,1 +1,1 @@
-{"id":"intake-s13-2","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source is a FINEOS Leave Plan eligibility screen not modelled beyond the confirmation summary.","ratio":0.29296225749559085,"diffPixels":415274,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s13-2","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Confirmation scrolled to Leave Plan(s) & Plan Eligibility Details.","ratio":0.0983264116575592,"diffPixels":134953,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

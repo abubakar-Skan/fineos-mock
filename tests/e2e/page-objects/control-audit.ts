@@ -710,6 +710,13 @@ const BOTTOM_MIDDLE = [
   control("button", "Next"),
 ] as const;
 
+// The FINEOS wizard repeats Previous/Next at the top of the form column
+// (above the process content); Close/Reset appear only in the bottom bar.
+const TOP_NAV = [
+  control("button", "Previous"),
+  control("button", "Next"),
+] as const;
+
 const BOTTOM_LAST = [
   control("button", "Close"),
   control("button", "Reset"),
@@ -741,8 +748,13 @@ const STAGE_CONTROLS: Readonly<Record<StageSlug, readonly ControlSpec[]>> = {
     control("textbox", "Job title"),
     control("combobox", "Employment status"),
     control("textbox", "Date of hire"),
-    control("button", "Open calendar"),
+    control("textbox", "Date job ended"),
+    control("button", "Open calendar", 2),
+    control("combobox", "Occupation category"),
     control("textbox", "Hours worked per week"),
+    control("combobox", "Job strenuous"),
+    control("radio", "Unverified"),
+    control("radio", "Verified"),
     ...BOTTOM_MIDDLE,
   ],
   "notification-options": [
@@ -778,6 +790,8 @@ const STAGE_CONTROLS: Readonly<Record<StageSlug, readonly ControlSpec[]>> = {
   ],
   "additional-absence-details": [
     control("combobox", "If you are eligible for FMLA and we require paperwork, would you like us to fax it to the doctor?"),
+    control("textbox", "If yes, you will be prompted to document who the paperwork should be faxed to and the fax number."),
+    control("combobox", "If we receive incomplete paperwork from your doctor, would you like us to fax it back to them?"),
     control("combobox", "Describe your medical condition/ diagnosis:"),
     control("textbox", "Additional detail (if provided):"),
     control("combobox", "Will the patient be admitted for an overnight stay in a medical facility?"),
@@ -788,14 +802,18 @@ const STAGE_CONTROLS: Readonly<Record<StageSlug, readonly ControlSpec[]>> = {
     control("radio", "Family Member"),
     control("textbox", "Incurred date"),
     control("combobox", "Accident / Sickness"),
+    control("textbox", "Accident date"),
     control("checkbox", "Work related"),
+    control("textbox", "Number of dependents"),
     control("textbox", "Date first unable to work"),
+    control("textbox", "Expected return to work date"),
     control("checkbox", "Spouse working"),
     control("textbox", "Last Day Worked"),
     control("textbox", "Work history"),
     control("textbox", "Salary continuance number of days"),
     control("textbox", "Hours worked"),
-    control("button", "Open calendar", 3),
+    control("textbox", "Are the days in between your last day worked and absence start date non-scheduled work days or unrelated to your leave reason/condition?"),
+    control("button", "Open calendar", 5),
     ...BOTTOM_MIDDLE,
   ],
   "policy-details": [
@@ -804,7 +822,8 @@ const STAGE_CONTROLS: Readonly<Record<StageSlug, readonly ControlSpec[]>> = {
   ],
   "earnings-details": [
     control("textbox", "Effective from"),
-    control("button", "Open calendar"),
+    control("textbox", "Effective to"),
+    control("button", "Open calendar", 2),
     control("combobox", "Earnings basis"),
     control("textbox", "Earnings amount"),
     control("button", "Quick Add"),
@@ -814,9 +833,23 @@ const STAGE_CONTROLS: Readonly<Record<StageSlug, readonly ControlSpec[]>> = {
   "medical-details": [
     control("button", "Add Medical Provider"),
     control("textbox", "Date of First Treatment"),
-    control("button", "Open calendar"),
+    control("textbox", "Medical authorization received"),
+    control("textbox", "Last medical info received"),
+    control("textbox", "Last medical info requested"),
     control("combobox", "Condition category"),
+    control("checkbox", "Pregnant"),
+    control("checkbox", "Contest pre-existing condition"),
+    control("textbox", "Most Recent Treatment/Office Visit Date"),
+    control("textbox", "Next Treatment/Office Visit Date"),
     control("textbox", "Condition"),
+    control("textbox", "Treatment plan"),
+    control("combobox", "Life expectancy"),
+    control("textbox", "Surgery date"),
+    control("checkbox", "Outpatient"),
+    control("combobox", "Type of surgery"),
+    control("textbox", "Facility"),
+    control("textbox", "Name of Surgery or Procedure"),
+    control("button", "Open calendar", 7),
     control("combobox", "Diagnosis code or description"),
     control("combobox", "Level indicator"),
     control("button", "Quick Add"),
@@ -838,11 +871,14 @@ const SELECT_OPTIONS: Readonly<Record<string, readonly string[]>> = {
   "Have you ever had a break in employment?": ["Please Select", "No", "Yes"],
   "USA Work State": ["DE", "ME", "NY", "CA"],
   "If you are eligible for FMLA and we require paperwork, would you like us to fax it to the doctor?": ["Please Select", "No", "Yes"],
-  "Describe your medical condition/ diagnosis:": ["Not Applicable", "Auditory", "Autoimmune disorder", "Back", "Cancer", "Cardiovascular", "Coronavirus", "Diabetes", "Digestive", "Pregnancy"],
+  "If we receive incomplete paperwork from your doctor, would you like us to fax it back to them?": ["Please Select", "No", "Yes"],
+  "Describe your medical condition/ diagnosis:": ["Not Applicable", "Unknown", "Auditory", "Autoimmune disorder", "Back", "Cancer", "Cardiovascular", "Coronavirus", "Diabetes", "Digestive", "Pregnancy"],
   "Will the patient be admitted for an overnight stay in a medical facility?": ["Unknown", "No", "Yes"],
   "Accident / Sickness": ["Sickness", "Accident"],
   "Earnings basis": ["Weekly", "Bi-Weekly", "Monthly", "Annual"],
   "Condition category": ["Unknown", "Chronic", "Acute", "Pregnancy"],
+  "Life expectancy": ["Unknown", "Normal", "Reduced"],
+  "Type of surgery": ["Unknown", "Inpatient", "Outpatient"],
   "Diagnosis code or description": ["Please Select", "O80 - Encounter for full-term uncomplicated delivery", "M25.561 - Pain in right knee", "S83.511 - Sprain of ACL of right knee"],
   "Level indicator": ["Primary", "Secondary", "Contributing"],
 };
@@ -1081,8 +1117,8 @@ const auditWizardChrome = async (
   page: Page,
   request: APIRequestContext,
 ): Promise<void> => {
-  await prepareStage(page, request, "reason-for-absence");
-  await assertInventory(page.locator(".fx-wizard-topbar"), BOTTOM_MIDDLE);
+  await prepareStage(page, request, "notification-options");
+  await assertInventory(page.locator(".fx-wizard-topnav"), TOP_NAV);
   await assertInventory(page.getByRole("navigation", { name: "Process Steps" }), [
     control("button", "Toggle process steps"),
     ...PROCESS_STEPS.map((name) => control("button", name)),
@@ -1105,27 +1141,14 @@ const exerciseWizardChrome = async (
   await exerciseWizardTopbar(page, request);
 };
 
-const wizardTopbar = (page: Page): Locator => page.locator(".fx-wizard-topbar");
+const wizardTopbar = (page: Page): Locator => page.locator(".fx-wizard-topnav");
 
 const exerciseWizardTopbar = async (
   page: Page,
   request: APIRequestContext,
 ): Promise<void> => {
-  await exerciseTopbarReset(page, request);
   await exerciseTopbarPrevious(page, request);
   await exerciseTopbarNext(page, request);
-  await exerciseTopbarClose(page, request);
-};
-
-const exerciseTopbarReset = async (
-  page: Page,
-  request: APIRequestContext,
-): Promise<void> => {
-  await prepareStage(page, request, "reason-for-absence");
-  const saved = waitForStageSave(page, "reason-for-absence");
-  await wizardTopbar(page).getByRole("button", { name: "Reset" }).click();
-  const response = await (await saved).response();
-  expect(response?.ok()).toBe(true);
 };
 
 const exerciseTopbarPrevious = async (
@@ -1144,15 +1167,6 @@ const exerciseTopbarNext = async (
   await prepareStage(page, request, "reason-for-absence");
   await wizardTopbar(page).getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/\/intake\/dates-of-absence$/);
-};
-
-const exerciseTopbarClose = async (
-  page: Page,
-  request: APIRequestContext,
-): Promise<void> => {
-  await prepareStage(page, request, "reason-for-absence");
-  await wizardTopbar(page).getByRole("button", { name: "Close" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
 };
 
 const exerciseProcessSteps = async (
@@ -1476,8 +1490,12 @@ const CASE_ACTIONS = [
   control("button", "Correspondence"),
   control("button", "Add Activity"),
   control("button", "Add eForm"),
+  control("button", "Add Participant"),
+  control("button", "Surround UI"),
   control("button", "Run Case Execution"),
 ] as const;
+
+const ABSENCE_ACTIONS = [control("button", "Copy Case"), ...CASE_ACTIONS] as const;
 
 const NOTIFICATION_TABS = [
   "General", "Tasks", "Contacts", "Documents", "Case Map", "Case History",
@@ -1507,11 +1525,11 @@ const auditCaseShell = async (
   caseId: string,
   tab: string,
   tabs: readonly string[],
+  actions: readonly ControlSpec[] = CASE_ACTIONS,
 ): Promise<void> => {
   await openCase(page, caseId, tab);
-  await assertInventory(page.locator(".fx-actions"), [
-    ...CASE_COMPONENTS, ...CASE_ACTIONS,
-  ]);
+  await assertInventory(page.locator(".fx-actions"), actions);
+  await assertInventory(page.locator(".fx-comp-box"), CASE_COMPONENTS);
   await assertInventory(page.locator(".fx-tabs"), tabs.map((name) => control("tab", name)));
 };
 
@@ -1558,10 +1576,11 @@ const auditNotificationCase = async (page: Page): Promise<void> => {
   await auditNotificationPanels(page);
 };
 
+const ADD_PARTICIPANT = control("button", "Add Participant");
 const PARTICIPANT_RAILS = {
-  notification: [control("link", "Erica Alexander")],
-  absence: [control("link", "David Hunter")],
-  gdc: [control("link", "David Hunter")],
+  notification: [control("link", "Erica Alexander"), ADD_PARTICIPANT],
+  absence: [control("link", "David Hunter"), ADD_PARTICIPANT],
+  gdc: [control("link", "David Hunter"), ADD_PARTICIPANT],
 } as const;
 
 const assertParticipants = async (
@@ -1569,7 +1588,7 @@ const assertParticipants = async (
   inventory: readonly ControlSpec[],
   partyId: string,
 ): Promise<void> => {
-  const participants = page.getByRole("complementary", { name: "Participants" });
+  const participants = page.getByRole("region", { name: "Participants" });
   await assertInventory(participants, inventory);
   await participants.getByRole("link", { name: inventory[0]!.name, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/parties/${partyId}$`));
@@ -1628,6 +1647,7 @@ const auditCaseContacts = async (page: Page, caseId: string): Promise<void> => {
 const DOCUMENT_CONTROLS = [
   control("textbox", "From"),
   control("textbox", "To"),
+  control("button", "Clear"),
   control("checkbox", "Include Sub-Cases"),
   control("button", "QuestionPathClaim Eform"),
   control("button", "QuestionPathAbsence Eform"),
@@ -1677,7 +1697,7 @@ const exerciseCaseMapButton = async (
 };
 
 const auditAbsenceCase = async (page: Page): Promise<void> => {
-  await auditCaseShell(page, ABSENCE_CASE, "absence-hub", ABSENCE_TABS);
+  await auditCaseShell(page, ABSENCE_CASE, "absence-hub", ABSENCE_TABS, ABSENCE_ACTIONS);
   await assertParticipants(page, PARTICIPANT_RAILS.absence, "PTY-77569");
   await exerciseCaseTabs(page, ABSENCE_CASE, ABSENCE_TABS);
   await auditAbsencePanels(page);

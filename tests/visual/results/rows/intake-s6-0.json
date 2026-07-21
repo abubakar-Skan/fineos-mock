@@ -1,1 +1,1 @@
-{"id":"intake-s6-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.13686490299823634,"diffPixels":194006,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s6-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Leave-period selector content region.","ratio":0.07539254658385093,"diffPixels":60691,"comparedWidth":1150,"comparedHeight":700,"maskedPixels":0}

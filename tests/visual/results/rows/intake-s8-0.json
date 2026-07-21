@@ -1,1 +1,1 @@
-{"id":"intake-s8-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.12500699741095794,"diffPixels":214377,"comparedWidth":1860,"comparedHeight":922}
+{"id":"intake-s8-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Additional-information form and Notes content region.","ratio":0.08131315042573321,"diffPixels":85948,"comparedWidth":1510,"comparedHeight":700,"maskedPixels":0}

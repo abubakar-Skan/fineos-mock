@@ -1,4 +1,5 @@
 import { useId, type KeyboardEvent, type ReactNode } from "react";
+import { Icon, type IconName } from "./Icon";
 
 export interface TabOverflow {
   readonly label: string;
@@ -7,14 +8,21 @@ export interface TabOverflow {
 
 interface RecordShellProps {
   readonly title: string;
+  readonly icon?: IconName;
+  readonly processTitle?: string;
   readonly subtitleLabel: string;
   readonly subtitleValue: ReactNode;
+  readonly bandKind?: "notification" | "absence" | "gdc" | "party";
   readonly headerActions?: ReactNode;
+  readonly sidebar?: ReactNode;
   readonly actions: ReactNode;
   readonly tabs: readonly string[];
   readonly activeTab: string;
   readonly onTab: (tab: string) => void;
   readonly tabOverflow?: TabOverflow;
+  // A sub-page (e.g. Choose the Party) hides the action bar and tab strip while
+  // keeping the header, coloured band, and sidebar rail, matching the source.
+  readonly chromeless?: boolean;
   readonly children: ReactNode;
 }
 
@@ -22,13 +30,24 @@ export function RecordShell(props: RecordShellProps) {
   const tabsId = useId();
   const panelId = `${tabsId}-panel`;
   return (
-    <section className="fx-record">
-      <RecordHeader title={props.title} label={props.subtitleLabel} value={props.subtitleValue} actions={props.headerActions} />
-      <div className="fx-actions">{props.actions}</div>
-      <TabBar id={tabsId} panelId={panelId} tabs={props.tabs} active={props.activeTab} onTab={props.onTab} overflow={props.tabOverflow} />
-      <TabPanel id={panelId} labelledBy={tabId(tabsId, props.activeTab)}>{props.children}</TabPanel>
+    <section className={`fx-record${props.sidebar ? " fx-record--split" : ""}`}>
+      <RecordHeader title={props.title} icon={props.icon} processTitle={props.processTitle}
+        label={props.subtitleLabel} value={props.subtitleValue} bandKind={props.bandKind} actions={props.headerActions} />
+      <RecordLayout sidebar={props.sidebar}>
+        {!props.chromeless && <div className="fx-actions">{props.actions}</div>}
+        {!props.chromeless && <TabBar id={tabsId} panelId={panelId} tabs={props.tabs} active={props.activeTab} onTab={props.onTab} overflow={props.tabOverflow} />}
+        <TabPanel id={panelId} labelledBy={tabId(tabsId, props.activeTab)}>{props.children}</TabPanel>
+      </RecordLayout>
     </section>
   );
+}
+
+function RecordLayout({ sidebar, children }: { readonly sidebar?: ReactNode; readonly children: ReactNode }) {
+  if (!sidebar) return <>{children}</>;
+  return <div className="fx-record-split">
+    <aside className="fx-record-aside">{sidebar}</aside>
+    <div className="fx-record-main">{children}</div>
+  </div>;
 }
 
 function TabPanel({ id, labelledBy, children }: { readonly id: string; readonly labelledBy: string; readonly children: ReactNode }) {
@@ -37,20 +56,25 @@ function TabPanel({ id, labelledBy, children }: { readonly id: string; readonly 
 
 interface HeaderProps {
   readonly title: string;
+  readonly icon?: IconName;
+  readonly processTitle?: string;
   readonly label: string;
   readonly value: ReactNode;
+  readonly bandKind?: RecordShellProps["bandKind"];
   readonly actions?: ReactNode;
 }
 
-function RecordHeader({ title, label, value, actions }: HeaderProps) {
+function RecordHeader({ title, icon = "record", processTitle, label, value, bandKind, actions }: HeaderProps) {
   return (
     <>
       <div className="fx-record-head">
-        <span className="fx-record-avatar" aria-hidden="true">◱</span>
+        <span className="fx-record-avatar" aria-hidden="true"><Icon name={icon} /></span>
         <h1>{title}</h1>
+        {processTitle && <span className="fx-record-process">{processTitle}</span>}
+        {bandKind && bandKind !== "party" && <span className="fx-record-head-icons" aria-hidden="true"><i /><i /><i /></span>}
         {actions && <div className="fx-record-head-tools">{actions}</div>}
       </div>
-      <div className="fx-record-sub"><strong>{label}</strong>{value}</div>
+      <div className={`fx-record-sub${bandKind ? ` fx-band--${bandKind}` : ""}`}><strong>{label}</strong>{value}</div>
     </>
   );
 }

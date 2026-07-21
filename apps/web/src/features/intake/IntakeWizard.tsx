@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Navigate, useNavigate, useParams, type NavigateFunction } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useSearchParams, type NavigateFunction } from "react-router-dom";
 import { serializeIntakeSection } from "@fineos/contracts";
 import { AppShell } from "../../components/fineos/AppShell";
+import { Icon } from "../../components/fineos/Icon";
 import { saveSection } from "../../app/api";
 import {
   FIRST_STEP, findStep, visibleSteps,
@@ -19,12 +20,16 @@ const NO_COMPONENT_MESSAGE = "At least one Leave or GDC component must be select
 const REASON_MESSAGE = "Select an absence reason to continue.";
 export function IntakeWizard() {
   const { draftId, step } = useParams();
+  const [params] = useSearchParams();
   const [model, setModel] = useState<DraftModel>(() => loadDraft(draftId ?? ""));
   useEffect(() => setModel(() => loadDraft(draftId ?? "")), [draftId]);
   const current = findStep(step ?? "");
   if (!draftId) return <Navigate to="/dashboard" replace />;
   if (!current) return <Navigate to={`/notifications/${draftId}/intake/${FIRST_STEP}`} replace />;
-  return <AppShell><Wizard draftId={draftId} current={current} model={model} setModel={setModel} /></AppShell>;
+  return <AppShell><div className="fx-intake">
+    <Wizard draftId={draftId} current={current} model={model} setModel={setModel}
+      openField={params.get("open")} reachedOnly={params.get("steps") === "reached"} dim={params.get("dim") === "1"} />
+  </div></AppShell>;
 }
 
 interface WizardProps {
@@ -32,18 +37,24 @@ interface WizardProps {
   readonly current: IntakeStep;
   readonly model: DraftModel;
   readonly setModel: (update: (model: DraftModel) => DraftModel) => void;
+  readonly openField: string | null;
+  readonly reachedOnly: boolean;
+  readonly dim: boolean;
 }
 
-function Wizard({ draftId, current, model, setModel }: WizardProps) {
+function Wizard({ draftId, current, model, setModel, openField, reachedOnly, dim }: WizardProps) {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const steps = visibleSteps(model.flags);
   const get = (name: string): string => readField(model, current.slug, name);
   const ctx: NavCtx = { draftId, current, steps, model, get, setError, navigate, setModel };
-  const content = <StepForm slug={current.slug} state={toState(model)} actions={buildActions(setModel, current.slug)} get={get} />;
-  return <><ProcessRecordHeader /><WizardBody current={current} steps={steps} saved={model.saved}
+  const displayed = reachedOnly ? steps.slice(0, currentIndex(ctx) + 1) : steps;
+  const content = <StepForm slug={current.slug} state={toState(model)} actions={buildActions(setModel, current.slug)} get={get} openField={openField} />;
+  return <><ProcessRecordHeader /><WizardBody current={current} steps={steps} displayed={displayed} saved={model.saved}
     error={error} content={content} onSelect={(slug) => void goToStep(ctx, slug)} ctx={ctx}
-    onReset={() => void resetCurrent(ctx)} onClose={() => navigate(-1)} /></>;
+    showNotes={current.section === "common" || openField === "questions"}
+    onReset={() => void resetCurrent(ctx)} onClose={() => navigate(-1)} />
+    {dim && <div className="fx-dim-scrim" aria-hidden="true" />}</>;
 }
 
 const toState = (model: DraftModel): DraftState => ({
@@ -142,7 +153,7 @@ const hasReason = (reason: string): boolean => reason !== "" && reason !== "Plea
 
 function ProcessRecordHeader() {
   return <><div className="fx-record-head fx-process-record">
-    <span className="fx-record-avatar" aria-hidden="true">◱</span>
+    <span className="fx-record-avatar" aria-hidden="true"><Icon name="person" /></span>
     <h1>{CLAIMANT}</h1>
     <span className="fx-process-status">Process Status</span>
   </div><div className="fx-record-sub"><strong>Customer Number</strong>{CUSTOMER_NUMBER}</div></>;
@@ -151,10 +162,12 @@ function ProcessRecordHeader() {
 interface WizardBodyProps {
   readonly current: IntakeStep;
   readonly steps: readonly IntakeStep[];
+  readonly displayed: readonly IntakeStep[];
   readonly saved: readonly string[];
   readonly error: string | null;
   readonly content: ReactNode;
   readonly ctx: NavCtx;
+  readonly showNotes: boolean;
   readonly onSelect: (slug: string) => void;
   readonly onReset: () => void;
   readonly onClose: () => void;
@@ -164,38 +177,27 @@ function WizardBody(props: WizardBodyProps) {
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="fx-wizard">
-      <NavBar ctx={props.ctx} onClose={props.onClose} onReset={props.onReset} />
-      <WizardMain props={props} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
+      <div className={props.showNotes ? "fx-wizard-main" : "fx-wizard-main fx-wizard-wide"}>
+        <ProcessSteps steps={props.displayed} activeSlug={props.current.slug} saved={props.saved}
+          collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} onSelect={props.onSelect} />
+        <WizardForm current={props.current} error={props.error} content={props.content}
+          ctx={props.ctx} onClose={props.onClose} onReset={props.onReset} />
+        {props.showNotes && <NotesPanel />}
+      </div>
     </div>
   );
-}
-
-function WizardMain({ props, collapsed, onToggle }: { readonly props: WizardBodyProps; readonly collapsed: boolean; readonly onToggle: () => void }) {
-  return <div className="fx-wizard-main">
-    <ProcessSteps steps={props.steps} activeSlug={props.current.slug} saved={props.saved}
-      collapsed={collapsed} onToggle={onToggle} onSelect={props.onSelect} />
-    <WizardForm current={props.current} error={props.error} content={props.content}
-      ctx={props.ctx} onClose={props.onClose} onReset={props.onReset} />
-    <NotesPanel />
-  </div>;
 }
 
 function WizardForm(props: Pick<WizardBodyProps, "current" | "error" | "content" | "ctx" | "onClose" | "onReset">) {
   return (
-    <div className="fx-wizard-form">
-      <h2 className="fx-wizard-title">{props.current.title}</h2>
-      {props.error && <p role="alert" className="fx-error">{props.error}</p>}
-      {props.content}
-      <BottomBar ctx={props.ctx} onClose={props.onClose} onReset={props.onReset} />
-    </div>
-  );
-}
-
-function NavBar({ ctx, onClose, onReset }: { readonly ctx: NavCtx; readonly onClose: () => void; readonly onReset: () => void }) {
-  return (
-    <div className="fx-wizard-topbar">
-      <div className="fx-wizard-topbar-left"><button type="button" className="fx-ghost" onClick={onClose}>Close</button><button type="button" className="fx-ghost" onClick={onReset}>Reset</button></div>
-      <StepButtons ctx={ctx} />
+    <div className="fx-wizard-col">
+      <div className="fx-wizard-topnav"><StepButtons ctx={props.ctx} /></div>
+      <div className="fx-wizard-form">
+        <h2 className="fx-wizard-title">{props.current.title}</h2>
+        {props.error && <p role="alert" className="fx-error">{props.error}</p>}
+        {props.content}
+        <BottomBar ctx={props.ctx} onClose={props.onClose} onReset={props.onReset} />
+      </div>
     </div>
   );
 }
@@ -203,8 +205,8 @@ function NavBar({ ctx, onClose, onReset }: { readonly ctx: NavCtx; readonly onCl
 function BottomBar({ ctx, onClose, onReset }: { readonly ctx: NavCtx; readonly onClose: () => void; readonly onReset: () => void }) {
   return (
     <div className="fx-wizard-bottombar">
-      <button type="button" className="fx-ghost" onClick={onClose}>Close</button>
-      <button type="button" className="fx-ghost" onClick={onReset}>Reset</button>
+      <button type="button" className="fx-step-btn" onClick={onClose}>Close</button>
+      <button type="button" className="fx-step-btn" onClick={onReset}>Reset</button>
       <StepButtons ctx={ctx} />
     </div>
   );
@@ -214,8 +216,8 @@ function StepButtons({ ctx }: { readonly ctx: NavCtx }) {
   const first = currentIndex(ctx) <= 0;
   return (
     <div className="fx-wizard-steps-nav">
-      <button type="button" className="fx-ghost" disabled={first} onClick={() => void goPrev(ctx)}>Previous</button>
-      <button type="button" className="fx-primary" onClick={() => void goNext(ctx)}>{isLastStep(ctx) ? "Finish" : "Next"}</button>
+      <button type="button" className="fx-step-btn" disabled={first} onClick={() => void goPrev(ctx)}>Previous</button>
+      <button type="button" className="fx-step-btn" onClick={() => void goNext(ctx)}>{isLastStep(ctx) ? "Finish" : "Next"}</button>
     </div>
   );
 }
@@ -234,14 +236,14 @@ function ProcessSteps({ steps, activeSlug, saved, collapsed, onToggle, onSelect 
     <nav className="fx-process-steps" aria-label="Process Steps">
       <ProcessHead collapsed={collapsed} onToggle={onToggle} />
       {!collapsed && steps.map((step) => (
-        <ProcessStepItem key={step.slug} step={step} active={step.slug === activeSlug} done={saved.includes(step.slug)} onSelect={() => onSelect(step.slug)} />
+        <ProcessStepItem key={step.slug} step={step} active={step.slug === activeSlug} done={saved.includes(step.slug) && step.slug !== activeSlug} onSelect={() => onSelect(step.slug)} />
       ))}
     </nav>
   );
 }
 
 function ProcessHead({ collapsed, onToggle }: Pick<ProcessStepsProps, "collapsed" | "onToggle">) {
-  return <div className="fx-process-head"><span>Process Steps</span>
+  return <div className="fx-process-head"><span className="fx-process-pill">Process Steps</span>
     <button type="button" className="fx-process-toggle" aria-label="Toggle process steps"
       aria-expanded={!collapsed} onClick={onToggle}>{collapsed ? "›" : "‹"}</button>
   </div>;
@@ -258,7 +260,7 @@ function ProcessStepItem({ step, active, done, onSelect }: ProcessStepItemProps)
   return (
     <button type="button" className={active ? "fx-process-step fx-process-step--on" : "fx-process-step"}
       aria-current={active ? "step" : undefined} onClick={onSelect}>
-      <span className="fx-process-mark" aria-hidden="true">{done ? "◉" : "○"}</span>{step.title}
+      <span className={done ? "fx-process-mark fx-process-mark--done" : "fx-process-mark"} aria-hidden="true" />{step.title}
     </button>
   );
 }

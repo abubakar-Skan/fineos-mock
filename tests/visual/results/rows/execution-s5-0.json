@@ -1,1 +1,1 @@
-{"id":"execution-s5-0","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source has a screen-recording capture border and video-call overlay.","ratio":0.14915298152028958,"diffPixels":195726,"comparedWidth":1450,"comparedHeight":905}
+{"id":"execution-s5-0","flow":"execution","threshold":0.1,"passed":true,"sourceOnly":false,"ratio":0.09279794346189478,"diffPixels":111184,"comparedWidth":1450,"comparedHeight":905,"maskedPixels":114120}

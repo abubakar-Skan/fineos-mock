@@ -1,1 +1,1 @@
-{"id":"intake-s6-4","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.22365220458553792,"diffPixels":317027,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s6-4","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Saved fixed-time-off table and return-to-work content region.","ratio":0.09443975155279503,"diffPixels":76024,"comparedWidth":1150,"comparedHeight":700,"maskedPixels":0}

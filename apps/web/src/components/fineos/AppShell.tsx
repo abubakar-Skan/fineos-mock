@@ -1,14 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SearchDialog } from "../../features/search/SearchDialog";
+import { Icon, type IconName } from "./Icon";
 
 const NAV_ITEMS = [
-  { key: "home", label: "Home", glyph: "⌂", to: "/dashboard" },
-  { key: "parties", label: "Parties", glyph: "⚇", to: "/parties/PTY-80937" },
-  { key: "cases", label: "Cases", glyph: "▤", to: "/master-plans/18489/members" },
-  { key: "queues", label: "Work Queues", glyph: "☰" },
-  { key: "tasks", label: "Tasks", glyph: "▣" },
-  { key: "library", label: "Library", glyph: "▦" },
+  { key: "home", label: "Home", icon: "home", to: "/dashboard" },
+  { key: "parties", label: "Parties", icon: "parties", to: "/parties/PTY-80937" },
+  { key: "cases", label: "Cases", icon: "cases", to: "/master-plans/18489/members" },
+  { key: "queues", label: "Work Queues", icon: "queues" },
+  { key: "tasks", label: "Tasks", icon: "tasks" },
+  { key: "library", label: "Library", icon: "library" },
 ] as const;
 
 type NavItem = (typeof NAV_ITEMS)[number];
@@ -16,11 +17,13 @@ type NavItem = (typeof NAV_ITEMS)[number];
 export function AppShell({ children }: { readonly children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const { search } = useLocation();
   return (
     <div className="fx-app">
       <ProductHeader onSearch={() => setSearchOpen(true)} />
       <AppBody notice={notice} onUnsupported={(label) => setNotice(`${label} is not available in this mock.`)}>{children}</AppBody>
-      {searchOpen && <SearchDialog onClose={() => setSearchOpen(false)} />}
+      <ShellFooter />
+      {searchOpen && <SearchDialog popup={new URLSearchParams(search).get("search") === "popup"} onClose={() => setSearchOpen(false)} />}
     </div>
   );
 }
@@ -44,6 +47,7 @@ function ShellNotice({ message }: { readonly message: string }) {
 function ProductHeader({ onSearch }: { readonly onSearch: () => void }) {
   return (
     <header className="fx-header">
+      <span className="fx-header-rail" aria-hidden="true" />
       <span className="fx-logo"><strong>FINEOS</strong> AdminSuite</span>
       <GlobalSearch onOpen={onSearch} />
       <HeaderTools />
@@ -56,7 +60,7 @@ function GlobalSearch({ onOpen }: { readonly onOpen: () => void }) {
     <div className="fx-search">
       <span className="fx-search-scope">All</span>
       <GlobalSearchInput onOpen={onOpen} />
-      <button type="button" className="fx-search-btn" aria-label="Open search" onClick={onOpen}>⌕</button>
+      <button type="button" className="fx-search-btn" aria-label="Open search" onClick={onOpen}><Icon name="search" /></button>
     </div>
   );
 }
@@ -69,19 +73,19 @@ function GlobalSearchInput({ onOpen }: { readonly onOpen: () => void }) {
 function HeaderTools() {
   return (
     <div className="fx-tools">
-      <ToolToggle label="Open in new window" glyph="⧉" />
-      <ToolToggle label="Theme" glyph="◑" />
+      <ToolToggle label="Open in new window" icon="external" />
+      <ToolToggle label="Theme" icon="theme" />
       <LanguageSelect />
       <span className="fx-avatar" aria-hidden="true">JE</span>
     </div>
   );
 }
 
-function ToolToggle({ label, glyph }: { readonly label: string; readonly glyph: string }) {
+function ToolToggle({ label, icon }: { readonly label: string; readonly icon: IconName }) {
   const [on, setOn] = useState(false);
   return (
     <button type="button" className="fx-tool" aria-label={label} aria-pressed={on} onClick={() => setOn((v) => !v)}>
-      {glyph}
+      <Icon name={icon} />
     </button>
   );
 }
@@ -95,7 +99,6 @@ function LanguageSelect() {
   );
 }
 
-// ponytail: sidebar glyphs are placeholder unicode; exact FINEOS icon set is matched in Task 10.
 function SideNav({ onUnsupported }: { readonly onUnsupported: (label: string) => void }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -130,7 +133,11 @@ interface NavIconProps {
 function NavIcon({ item, active, onSelect }: NavIconProps) {
   return (
     <button type="button" className="fx-navicon" aria-label={item.label} aria-current={active ? "page" : undefined} onClick={onSelect}>
-      {item.glyph}
+      <Icon name={item.icon} />
     </button>
   );
+}
+
+function ShellFooter() {
+  return <footer className="fx-footer"><span>Version: 25.4.4-UNUM-C2.0.7</span><span>About</span><span>Powered by FINEOS</span></footer>;
 }

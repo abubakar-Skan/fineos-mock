@@ -2,17 +2,17 @@
   --fx-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --fx-font-size: 13px;
 
-  --fx-header-bg: #1c5a7c;
+  --fx-header-bg: #2f6d94;
   --fx-header-fg: #ffffff;
-  --fx-header-search-bg: #14496a;
+  --fx-header-search-bg: #225477;
 
-  --fx-sidenav-bg: #1b2c3e;
-  --fx-sidenav-fg: #c7d4df;
-  --fx-sidenav-active: #2a4359;
-  --fx-sidenav-accent: #b32a2a;
+  --fx-sidenav-bg: #1b2f42;
+  --fx-sidenav-fg: #a9bccb;
+  --fx-sidenav-active: #29506b;
 
   --fx-page-bg: #f3f4f6;
   --fx-panel-bg: #ffffff;
+  --fx-widget-bg: #e8ecef;
   --fx-border: #d7dce2;
   --fx-border-strong: #b9c1cb;
 
@@ -26,8 +26,14 @@
   --fx-primary-fg: #ffffff;
   --fx-button-dark: #33475b;
 
-  --fx-record-band: #dfe7ee;
-  --fx-record-subband: #cddbe6;
+  --fx-record-band: #f4f7f8;
+  --fx-record-subband: #dde7ec;
+  --fx-band-notification: #e9d9e2;
+  --fx-band-absence: #ecd7e1;
+  --fx-band-gdc: #cddce8;
+  --fx-band-party: #c9d7e1;
+  --fx-maroon: #8b1f4a;
+  --fx-rail-red: #b02020;
   --fx-row-alt: #f6f8fa;
   --fx-row-selected: #cfe0ec;
   --fx-bar: #2f9e8f;
@@ -35,6 +41,7 @@
   --fx-focus: #1a6fb5;
   --fx-error: #b3261e;
 
-  --fx-login-header: #2e7ca1;
-  --fx-login-card: #e4e4e4;
+  --fx-login-header: #346790;
+  --fx-login-card: #e7e7e7;
+  --fx-login-backdrop: #838383;
 }

@@ -1,1 +1,1 @@
-{"id":"intake-s5-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.11792874779541446,"diffPixels":167164,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s5-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"ratio":0.05436939890710382,"diffPixels":74622,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

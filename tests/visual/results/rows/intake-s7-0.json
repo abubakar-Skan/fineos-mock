@@ -1,1 +1,1 @@
-{"id":"intake-s7-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.23355132275132276,"diffPixels":331059,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s7-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Work-pattern panel content region.","ratio":0.09693291925465838,"diffPixels":78031,"comparedWidth":1150,"comparedHeight":700,"maskedPixels":0}

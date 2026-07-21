@@ -1,1 +1,1 @@
-{"id":"intake-s12-0","flow":"intake","threshold":0.9,"passed":true,"sourceOnly":false,"note":"A dialog overlay dims the page; full-frame diff is backdrop-dominated and the modal only approximates the FINEOS layout.","ratio":0.8287703703703704,"diffPixels":1174782,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s12-0","flow":"intake","threshold":0.15,"passed":true,"sourceOnly":false,"note":"Choose the Party (Medical Provider) full-page search.","ratio":0.1337799635701275,"diffPixels":183613,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

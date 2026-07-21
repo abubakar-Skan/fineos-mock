@@ -1,1 +1,1 @@
-{"id":"intake-s3-1","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source scrolled to Member address & Contact Details section.","ratio":0.1559273368606702,"diffPixels":221027,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s3-1","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Source scrolled to Member address & Contact Details section.","ratio":0.05657559198542805,"diffPixels":77650,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

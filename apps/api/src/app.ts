@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
+import fastifyStatic from "@fastify/static";
 import type { Db } from "./infrastructure/database";
 import {
   createCaseRepository,
@@ -16,7 +17,10 @@ import { registerTestRoutes } from "./boundary/test-routes";
 
 interface AppOptions {
   readonly resetTestData?: () => void;
+  readonly webRoot?: string;
 }
+
+const API_PREFIX = "/api";
 
 export const buildApp = (db: Db, options: AppOptions = {}): FastifyInstance => {
   const app = Fastify();
@@ -28,5 +32,16 @@ export const buildApp = (db: Db, options: AppOptions = {}): FastifyInstance => {
   registerNotificationRoutes(app, createNotificationService({ parties, notifications }));
   registerCaseRoutes(app, createExecutionService({ notifications, cases, parties }));
   registerTestRoutes(app, options.resetTestData);
+  if (options.webRoot) serveWebApp(app, options.webRoot);
   return app;
+};
+
+// Single-container mode: serve the built SPA and fall back to index.html so
+// client-side routes resolve, while unmatched /api paths still return 404.
+const serveWebApp = (app: FastifyInstance, root: string): void => {
+  app.register(fastifyStatic, { root });
+  app.setNotFoundHandler((req, reply) => {
+    if (req.method === "GET" && !req.url.startsWith(API_PREFIX)) return reply.sendFile("index.html");
+    return reply.status(404).send({ error: "not_found" });
+  });
 };

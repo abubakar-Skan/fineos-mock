@@ -1,1 +1,1 @@
-{"id":"intake-s6-3","flow":"intake","threshold":0.9,"passed":true,"sourceOnly":false,"note":"A dialog overlay dims the page; full-frame diff is backdrop-dominated and the modal only approximates the FINEOS layout.","ratio":0.7745530864197531,"diffPixels":1097929,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s6-3","flow":"intake","threshold":0.15,"passed":true,"sourceOnly":false,"note":"Add Absence Period modal over the dimmed page.","ratio":0.1043511839708561,"diffPixels":143222,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

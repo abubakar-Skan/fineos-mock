@@ -1,1 +1,1 @@
-{"id":"execution-s10-0","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source has a screen-recording capture border and video-call overlay.","ratio":0.19898494951419318,"diffPixels":261118,"comparedWidth":1450,"comparedHeight":905}
+{"id":"execution-s10-0","flow":"execution","threshold":0.15,"passed":true,"sourceOnly":false,"note":"Diagnosis type-ahead selected text; source-only browser preview popup is masked.","ratio":0.08214797213723064,"diffPixels":50475,"comparedWidth":1120,"comparedHeight":550,"maskedPixels":1560}

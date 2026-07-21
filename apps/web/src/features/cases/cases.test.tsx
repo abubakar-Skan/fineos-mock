@@ -241,7 +241,8 @@ describe("Claimant contact entry", () => {
   it("opens claimant Profile before Contact Details from the case participant link", async () => {
     const user = userEvent.setup();
     renderAt("/cases/NTN-159898/general");
-    const claimant = await screen.findByRole("link", { name: /david hunter/i });
+    const claimants = await screen.findAllByRole("link", { name: /david hunter/i });
+    const claimant = claimants[0]!;
     expect(claimant.getAttribute("href")).toBe("/parties/PTY-77569");
     await user.click(claimant);
     expect(await screen.findByRole("heading", { name: /personal details/i })).toBeTruthy();

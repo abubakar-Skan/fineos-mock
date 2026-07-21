@@ -1,1 +1,1 @@
-{"id":"intake-s12-1","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.22311111111111112,"diffPixels":316260,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s12-1","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Unobscured medical form content region; source Excel overlay remains outside the comparison.","ratio":0.09515625,"diffPixels":14007,"comparedWidth":368,"comparedHeight":400,"maskedPixels":0}

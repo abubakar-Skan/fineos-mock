@@ -1,1 +1,1 @@
-{"id":"execution-s7-2","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source has a screen-recording capture border and video-call overlay.","ratio":0.16970699180796342,"diffPixels":222698,"comparedWidth":1450,"comparedHeight":905}
+{"id":"execution-s7-2","flow":"execution","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Full medical fields relevant region.","ratio":0.09170364372469636,"diffPixels":56627,"comparedWidth":950,"comparedHeight":650,"maskedPixels":0}

@@ -1,1 +1,1 @@
-{"id":"intake-s12-2","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.1927231040564374,"diffPixels":273185,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s12-2","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Full medical form content region.","ratio":0.08364565217391304,"diffPixels":76954,"comparedWidth":1150,"comparedHeight":800,"maskedPixels":0}

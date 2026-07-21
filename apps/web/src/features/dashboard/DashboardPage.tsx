@@ -98,7 +98,7 @@ function Widget({ title, onClose, children }: WidgetProps) {
 function TeamCases() {
   const [selected, setSelected] = useState<string | null>(null);
   return (
-    <div>
+    <div className="fx-team">
       <button type="button" className="fx-ghost" onClick={() => setSelected(null)}>Clear Filter</button>
       {TEAM_CASES.map((row) => (
         <TeamRow key={row.name} name={row.name} count={row.count} bar={"bar" in row} selected={selected === row.name} onSelect={() => setSelected(row.name)} />
@@ -119,7 +119,7 @@ function TeamRow({ name, count, bar, selected, onSelect }: TeamRowProps) {
   return (
     <button type="button" className="fx-team-row" aria-selected={selected} onClick={onSelect}>
       <div className="fx-team-name">{name}</div>
-      {bar ? <div className="fx-team-bar">{count}</div> : <div className="fx-team-count">{count}</div>}
+      {bar ? <div className="fx-team-barrow"><span className="fx-team-bar" /><span className="fx-team-barval">{count}</span></div> : <div className="fx-team-count">{count}</div>}
     </button>
   );
 }

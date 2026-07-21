@@ -1,1 +1,1 @@
-{"id":"intake-s13-1","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source is the FINEOS post-submit Notification Summary screen; mock shows the confirmation summary.","ratio":0.28010017636684303,"diffPixels":397042,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s13-1","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Fixed Time Off and Leave Plans core content region.","ratio":0.09939083820662768,"diffPixels":101975,"comparedWidth":1350,"comparedHeight":760,"maskedPixels":0}

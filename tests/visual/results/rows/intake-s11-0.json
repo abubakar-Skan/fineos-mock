@@ -1,1 +1,1 @@
-{"id":"intake-s11-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.16247195767195768,"diffPixels":230304,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s11-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Earnings and other-benefits tables content region.","ratio":0.09436521739130435,"diffPixels":75964,"comparedWidth":1150,"comparedHeight":700,"maskedPixels":0}

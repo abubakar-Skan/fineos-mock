@@ -22,17 +22,32 @@ interface SelectFieldProps {
   readonly label: string;
   readonly options: readonly string[];
   readonly value?: string;
+  readonly open?: boolean;
   readonly onChange?: (value: string) => void;
 }
 
-export function SelectField({ label, options, value, onChange }: SelectFieldProps) {
+export function SelectField({ label, options, value, open, onChange }: SelectFieldProps) {
+  const selected = value ?? options[0] ?? "";
   return (
     <label className="fx-field">
       <span className="fx-field-label">{label}</span>
-      <select className="fx-select" value={value ?? options[0]} onChange={(event) => onChange?.(event.target.value)}>
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
+      <span className="fx-select-wrap">
+        <select className="fx-select" value={selected} onChange={(event) => onChange?.(event.target.value)}>
+          {options.map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
+        {open && <OpenListbox options={options} selected={selected} />}
+      </span>
     </label>
+  );
+}
+
+function OpenListbox({ options, selected }: { readonly options: readonly string[]; readonly selected: string }) {
+  return (
+    <ul className="fx-listbox" aria-hidden="true">
+      {options.map((option) => (
+        <li key={option} className={option === selected ? "fx-listbox--sel" : undefined}>{option}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -69,7 +84,7 @@ interface ToggleProps {
 
 export function ToggleField({ label, description, checked, onChange }: ToggleProps) {
   return (
-    <div className="fx-toggle-row">
+    <div className={checked ? "fx-toggle-row fx-toggle-row--on" : "fx-toggle-row"}>
       <button type="button" role="switch" aria-checked={checked} aria-label={label}
         className={checked ? "fx-toggle fx-toggle--on" : "fx-toggle"} onClick={() => onChange(!checked)} />
       <div><div className="fx-toggle-label">{label}</div>{description && <p className="fx-toggle-desc">{description}</p>}</div>
@@ -173,8 +188,9 @@ function Calendar({ label, onPick }: { readonly label: string; readonly onPick: 
   const shift = (delta: number): void => shiftMonth(year, month, delta, setYear, setMonth);
   return (
     <div className="fx-calendar" role="dialog" aria-label={`${label} calendar`}>
-      <CalendarHead year={year} month={month} onPrev={() => shift(-1)} onNext={() => shift(1)} />
+      <CalendarHead year={year} month={month} onShift={shift} />
       <CalendarGrid year={year} month={month} onPick={onPick} />
+      <div className="fx-cal-foot"><span>TODAY</span><span>CLEAR</span></div>
     </div>
   );
 }
@@ -191,25 +207,38 @@ const shiftMonth = (
 interface CalendarHeadProps {
   readonly year: number;
   readonly month: number;
-  readonly onPrev: () => void;
-  readonly onNext: () => void;
+  readonly onShift: (delta: number) => void;
 }
 
-function CalendarHead({ year, month, onPrev, onNext }: CalendarHeadProps) {
+function CalendarHead({ year, month, onShift }: CalendarHeadProps) {
   return (
     <div className="fx-cal-head">
-      <button type="button" className="fx-cal-nav" aria-label="Previous month" onClick={onPrev}>‹</button>
+      <span className="fx-cal-nav" aria-hidden="true">«</span>
+      <button type="button" className="fx-cal-nav" aria-label="Previous month" onClick={() => onShift(-1)}>‹</button>
       <span className="fx-cal-title">{MONTHS[month]} {year}</span>
-      <button type="button" className="fx-cal-nav" aria-label="Next month" onClick={onNext}>›</button>
+      <button type="button" className="fx-cal-nav" aria-label="Next month" onClick={() => onShift(1)}>›</button>
+      <span className="fx-cal-nav" aria-hidden="true">»</span>
     </div>
   );
 }
 
-const daysInMonth = (year: number, month: number): number => new Date(year, month + 1, 0).getDate();
 const firstWeekday = (year: number, month: number): number => new Date(year, month, 1).getDay();
-const range = (count: number): readonly number[] => Array.from({ length: count }, (_, index) => index + 1);
 const pad = (value: number): string => String(value).padStart(2, "0");
 const formatDate = (year: number, month: number, day: number): string => `${pad(month + 1)}/${pad(day)}/${year}`;
+
+interface CalendarCell { readonly day: number; readonly muted: boolean; readonly value: string; }
+
+const buildCells = (year: number, month: number): readonly CalendarCell[] => {
+  const lead = firstWeekday(year, month);
+  const cells: CalendarCell[] = [];
+  for (let i = 0; i < 42; i += 1) addCell(cells, year, month, i - lead + 1);
+  return cells;
+};
+
+const addCell = (cells: CalendarCell[], year: number, month: number, offset: number): void => {
+  const date = new Date(year, month, offset);
+  cells.push({ day: date.getDate(), muted: date.getMonth() !== month, value: formatDate(date.getFullYear(), date.getMonth(), date.getDate()) });
+};
 
 interface CalendarGridProps {
   readonly year: number;
@@ -221,9 +250,10 @@ function CalendarGrid({ year, month, onPick }: CalendarGridProps) {
   return (
     <div className="fx-cal-grid" role="grid">
       {WEEKDAYS.map((day) => <span key={day} className="fx-cal-weekday">{day}</span>)}
-      {range(firstWeekday(year, month)).map((blank) => <span key={`b${blank}`} className="fx-cal-blank" />)}
-      {range(daysInMonth(year, month)).map((day) => (
-        <button key={day} type="button" className="fx-cal-day" onClick={() => onPick(formatDate(year, month, day))}>{day}</button>
+      {buildCells(year, month).map((cell, index) => (
+        cell.muted
+          ? <span key={index} className="fx-cal-day fx-cal-day--muted" aria-hidden="true">{cell.day}</span>
+          : <button key={index} type="button" className="fx-cal-day" onClick={() => onPick(cell.value)}>{cell.day}</button>
       ))}
     </div>
   );

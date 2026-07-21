@@ -1,1 +1,1 @@
-{"id":"intake-s9-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.195531569664903,"diffPixels":277166,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s9-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Incident form content; source recording notification overlay is masked.","ratio":0.06708741522230595,"diffPixels":53415,"comparedWidth":1150,"comparedHeight":700,"maskedPixels":8800}

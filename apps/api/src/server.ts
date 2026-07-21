@@ -9,6 +9,7 @@ import { buildApp } from "./app";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const DB_PATH = process.env.FINEOS_DB_PATH ?? DEFAULT_DB_PATH;
+const WEB_ROOT = process.env.FINEOS_WEB_DIST;
 
 const start = async (): Promise<void> => {
   const db = resetDatabase(DB_PATH);
@@ -16,7 +17,7 @@ const start = async (): Promise<void> => {
   const resetTestData = process.env.FINEOS_TEST_MODE === "1"
     ? () => resetSeededDatabase(db)
     : undefined;
-  const app = buildApp(db, { resetTestData });
+  const app = buildApp(db, { resetTestData, webRoot: WEB_ROOT });
   await app.listen({ port: PORT, host: "0.0.0.0" });
 };
 

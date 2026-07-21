@@ -73,7 +73,8 @@ function Suggestions({ matches, onPick }: { readonly matches: readonly IcdCode[]
 
 function DiagnosisTable({ rows }: { readonly rows: readonly DiagnosisRow[] }) {
   return <table className="fx-table">
-    <thead><tr><th>Level</th><th>Type</th><th>Code</th><th>Description</th><th>Severity</th></tr></thead>
+    <colgroup><col /><col /><col /><col /><col /><col /><col /></colgroup>
+    <thead><tr><th>Level</th><th>Type</th><th>Code</th><th>Description</th><th>Severity</th><th>Effective From</th><th>Effective To</th></tr></thead>
     <tbody>{rows.length === 0
       ? <tr><td colSpan={5} className="fx-empty-inline">No diagnosis codes recorded.</td></tr>
       : rows.map((row) => <DiagnosisRowView key={`${row.level}-${row.code}`} row={row} />)}</tbody>
@@ -81,5 +82,5 @@ function DiagnosisTable({ rows }: { readonly rows: readonly DiagnosisRow[] }) {
 }
 
 function DiagnosisRowView({ row }: { readonly row: DiagnosisRow }) {
-  return <tr><td>{row.level}</td><td>ICD-10-CM</td><td>{row.code}</td><td>{row.description}</td><td>N/A</td></tr>;
+  return <tr><td>{row.level}</td><td>ICD-10-CM</td><td>{row.code}</td><td>{row.description}</td><td colSpan={3}>N/A</td></tr>;
 }

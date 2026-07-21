@@ -2,32 +2,44 @@ import { useEffect, useRef, type KeyboardEvent, type ReactNode, type RefObject }
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+type DialogVariant = "modal" | "page" | "popup" | "wide";
+
 interface DialogProps {
   readonly title: string;
   readonly onClose: () => void;
+  readonly variant?: DialogVariant;
   readonly children: ReactNode;
 }
 
-export function Dialog({ title, onClose, children }: DialogProps) {
+export function Dialog({ title, onClose, variant = "modal", children }: DialogProps) {
   const panelRef = useDialogPanel();
   return (
-    <div className="fx-overlay" onMouseDown={onClose}>
-      <DialogSurface title={title} onClose={onClose} panelRef={panelRef}>
+    <div className={overlayClass(variant)} onMouseDown={onClose}>
+      <DialogSurface title={title} onClose={onClose} panelRef={panelRef} variant={variant}>
         {children}
       </DialogSurface>
     </div>
   );
 }
 
+const overlayClass = (variant: DialogVariant): string =>
+  variant === "page" ? "fx-search-overlay" : variant === "popup" ? "fx-search-popup-overlay" :
+    variant === "wide" ? "fx-modal-overlay" : "fx-overlay";
+
+const surfaceClass = (variant: DialogVariant): string =>
+  variant === "page" ? "fx-search-page" : variant === "popup" ? "fx-search-popup" :
+    variant === "wide" ? "fx-wide-modal" : "fx-dialog";
+
 interface SurfaceProps {
   readonly title: string;
   readonly onClose: () => void;
   readonly panelRef: RefObject<HTMLDivElement | null>;
+  readonly variant: DialogVariant;
   readonly children: ReactNode;
 }
 
-function DialogSurface({ title, onClose, panelRef, children }: SurfaceProps) {
-  return <div className="fx-dialog" role="dialog" aria-modal="true" aria-label={title}
+function DialogSurface({ title, onClose, panelRef, variant, children }: SurfaceProps) {
+  return <div className={surfaceClass(variant)} role="dialog" aria-modal="true" aria-label={title}
     tabIndex={-1} ref={panelRef} onMouseDown={stopInside} onKeyDown={(event) => handleDialogKey(event, onClose)}>
     {children}
   </div>;

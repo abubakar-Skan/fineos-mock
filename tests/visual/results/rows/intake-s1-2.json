@@ -1,1 +1,1 @@
-{"id":"intake-s1-2","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source includes browser window/tab/URL chrome above AdminSuite.","ratio":0.1848740678204587,"diffPixels":262780,"comparedWidth":1545,"comparedHeight":920}
+{"id":"intake-s1-2","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Master-plan member table and detail content region after cropping source browser chrome.","ratio":0.08277816091954023,"diffPixels":72017,"comparedWidth":1450,"comparedHeight":600,"maskedPixels":0}

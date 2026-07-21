@@ -1,1 +1,1 @@
-{"id":"execution-s7-3","flow":"execution","threshold":0.85,"passed":true,"sourceOnly":true,"note":"Source shows an OS-drawn native <select> popup that cannot be captured in-DOM; the closed field is compared.","ratio":0.18289426557439512,"diffPixels":240003,"comparedWidth":1450,"comparedHeight":905}
+{"id":"execution-s7-3","flow":"execution","threshold":0.15,"passed":true,"sourceOnly":false,"note":"Condition Category listbox open.","ratio":0.1338118464751073,"diffPixels":173657,"comparedWidth":1450,"comparedHeight":905,"maskedPixels":14480}

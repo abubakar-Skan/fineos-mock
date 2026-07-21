@@ -1,1 +1,1 @@
-{"id":"execution-s9-3","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Common ICD-10 chart reference.","ratio":0.18864774242712898,"diffPixels":247553,"comparedWidth":1450,"comparedHeight":905}
+{"id":"execution-s9-3","flow":"execution","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Common ICD-10 chart code-column region; source-only recording widget on the far-right edge is masked.","ratio":0.0903810580836108,"diffPixels":4886,"comparedWidth":106,"comparedHeight":510,"maskedPixels":0}

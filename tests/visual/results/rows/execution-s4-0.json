@@ -1,1 +1,1 @@
-{"id":"execution-s4-0","flow":"execution","threshold":0.4,"passed":true,"sourceOnly":true,"note":"Source is the QuestionPathClaim eForm viewer; mock shows the Documents tab it opens from.","ratio":0.15049114116974663,"diffPixels":197482,"comparedWidth":1450,"comparedHeight":905}
+{"id":"execution-s4-0","flow":"execution","threshold":0.15,"passed":true,"sourceOnly":false,"note":"QuestionPathClaim eForm viewer opened from the Documents tab.","ratio":0.09259634035849168,"diffPixels":118960,"comparedWidth":1450,"comparedHeight":905,"maskedPixels":27534}

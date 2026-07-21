@@ -1,1 +1,1 @@
-{"id":"intake-s13-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.16526490299823632,"diffPixels":234263,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s13-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Submitted notification and absence-case core content region.","ratio":0.09731074380165289,"diffPixels":58873,"comparedWidth":1100,"comparedHeight":550,"maskedPixels":0}

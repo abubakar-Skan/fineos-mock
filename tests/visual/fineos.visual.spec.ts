@@ -16,6 +16,7 @@ interface DiffResult {
   readonly diffPixels: number;
   readonly comparedWidth: number;
   readonly comparedHeight: number;
+  readonly maskedPixels: number;
 }
 
 interface ReportRow extends DiffResult {
@@ -50,6 +51,12 @@ for (const state of visualStates) {
 
 test.afterAll(() => writeReport());
 
+// Compares the mock render against the source. `cropTopPx` strips source-only
+// browser/OS chrome from the TOP of the SOURCE only, then the mock's content top
+// (row 0) is aligned to the first source content row. Masked regions cover
+// source-only artifacts (video overlays, capture borders): they are filled
+// neutral in BOTH buffers (never counted as differing) and removed from the
+// denominator, so the ratio reflects only comparable content-region pixels.
 const compareToReference = (
   id: string,
   fixture: string,
@@ -57,50 +64,60 @@ const compareToReference = (
   meta: CompareMeta,
 ): DiffResult => {
   const source = PNG.sync.read(readFileSync(join(REFERENCE_DIR, fixture)));
-  const width = Math.min(actual.width, source.width);
   const cropTop = meta.cropTopPx ?? 0;
-  const height = Math.min(actual.height, source.height);
-  const comparedHeight = Math.max(0, height - cropTop);
-  const a = extractRegion(actual, width, height, cropTop, meta.mask);
-  const b = extractRegion(source, width, height, cropTop, meta.mask);
-  const diff = new PNG({ width, height: comparedHeight });
-  const diffPixels = pixelmatch(a, b, diff.data, width, comparedHeight, { threshold: 0.1 });
-  writeArtifacts(id, actual, diff);
-  const total = width * comparedHeight || 1;
-  return { ratio: diffPixels / total, diffPixels, comparedWidth: width, comparedHeight };
+  const region = meta.region ?? { x: 0, y: 0, width: actual.width, height: actual.height };
+  const width = Math.min(region.width, actual.width - region.x, source.width - region.x);
+  const height = Math.max(0, Math.min(region.height, actual.height - region.y, source.height - cropTop - region.y));
+  const a = sliceRect(actual, region.x, region.y, width, height);
+  const b = sliceRect(source, region.x, cropTop + region.y, width, height);
+  const masks = translateMasks(meta.mask ?? [], region);
+  const masked = applyMasks(a, b, width, height, masks);
+  return diffBuffers(id, actual, a, b, width, height, masked);
 };
 
-// Returns an RGBA buffer of `width` x (`height` - `cropTop`) copied from `png`,
-// with any mask rectangles filled neutral so source-only overlays are ignored.
-const extractRegion = (
-  png: PNG,
-  width: number,
-  height: number,
-  cropTop: number,
-  masks: readonly Rect[] = [],
-): Buffer => {
-  const out = Buffer.alloc(width * (height - cropTop) * 4);
-  copyRows(png, out, width, cropTop, height);
-  for (const rect of masks) fillMask(out, width, height - cropTop, rect, cropTop);
+const sliceRect = (png: PNG, srcLeft: number, srcTop: number, width: number, height: number): Buffer => {
+  const out = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    const srcRow = ((y + srcTop) * png.width + srcLeft) * 4;
+    png.data.copy(out, y * width * 4, srcRow, srcRow + width * 4);
+  }
   return out;
 };
 
-const copyRows = (png: PNG, out: Buffer, width: number, cropTop: number, height: number): void => {
-  for (let y = cropTop; y < height; y += 1) {
-    const srcRow = y * png.width * 4;
-    const dstRow = (y - cropTop) * width * 4;
-    png.data.copy(out, dstRow, srcRow, srcRow + width * 4);
+const translateMasks = (masks: readonly Rect[], region: Rect): readonly Rect[] =>
+  masks.map((mask) => ({ ...mask, x: mask.x - region.x, y: mask.y - region.y }));
+
+// Fills mask rectangles neutral in both buffers; returns the masked pixel count.
+const applyMasks = (a: Buffer, b: Buffer, width: number, height: number, masks: readonly Rect[]): number => {
+  const covered = new Uint8Array(width * height);
+  for (const rect of masks) markRect(covered, width, height, rect);
+  let count = 0;
+  for (let i = 0; i < covered.length; i += 1) if (covered[i]) count += fillNeutral(a, b, i);
+  return count;
+};
+
+const markRect = (covered: Uint8Array, width: number, height: number, rect: Rect): void => {
+  const x2 = Math.min(width, rect.x + rect.width);
+  const y2 = Math.min(height, rect.y + rect.height);
+  for (let y = Math.max(0, rect.y); y < y2; y += 1) {
+    for (let x = Math.max(0, rect.x); x < x2; x += 1) covered[y * width + x] = 1;
   }
 };
 
-const fillMask = (out: Buffer, width: number, height: number, rect: Rect, cropTop: number): void => {
-  const x1 = Math.max(0, rect.x);
-  const y1 = Math.max(0, rect.y - cropTop);
-  const x2 = Math.min(width, rect.x + rect.width);
-  const y2 = Math.min(height, rect.y + rect.height - cropTop);
-  for (let y = y1; y < y2; y += 1) {
-    for (let x = x1; x < x2; x += 1) out.fill(128, (y * width + x) * 4, (y * width + x) * 4 + 4);
-  }
+const fillNeutral = (a: Buffer, b: Buffer, pixel: number): number => {
+  a.fill(128, pixel * 4, pixel * 4 + 4);
+  b.fill(128, pixel * 4, pixel * 4 + 4);
+  return 1;
+};
+
+const diffBuffers = (
+  id: string, actual: PNG, a: Buffer, b: Buffer, width: number, height: number, masked: number,
+): DiffResult => {
+  const diff = new PNG({ width, height });
+  const diffPixels = pixelmatch(a, b, diff.data, width, height, { threshold: 0.1 });
+  writeArtifacts(id, actual, diff);
+  const total = Math.max(1, width * height - masked);
+  return { ratio: diffPixels / total, diffPixels, comparedWidth: width, comparedHeight: height, maskedPixels: masked };
 };
 
 const writeArtifacts = (id: string, actual: PNG, diff: PNG): void => {

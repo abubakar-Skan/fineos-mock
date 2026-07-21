@@ -1,1 +1,1 @@
-{"id":"intake-s6-2","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Calendar month reflects seeded date; source is Feb 2026.","ratio":0.2034236331569665,"diffPixels":288353,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s6-2","flow":"intake","threshold":0.15,"passed":true,"sourceOnly":false,"note":"FINEOS Feb 2026 calendar over the Last day worked field.","ratio":0.11783825136612022,"diffPixels":161733,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

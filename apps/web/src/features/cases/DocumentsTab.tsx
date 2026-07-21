@@ -6,20 +6,27 @@ import { displayDate, isDavidReference, section } from "./case-sections";
 
 interface DocumentRow {
   readonly caseType: string;
+  readonly icon: "doc" | "pdf";
   readonly created: string;
   readonly user: string;
   readonly status: string;
   readonly documentType: string;
+  readonly description?: string;
+  readonly group?: string;
+  readonly delivery: string;
+  readonly title?: string;
   readonly eform?: "claim" | "absence";
 }
 
 const REFERENCE_DOCUMENTS: readonly DocumentRow[] = [
-  { caseType: "STD Benefit", created: "01/06/2026", user: "System Administrator", status: "Completed", documentType: "Policy Provisions Document" },
-  { caseType: "STD Benefit", created: "01/06/2026", user: "Total Leave Assist Adm", status: "Completed", documentType: "STD Earnings and Tax" },
-  { caseType: "Absence Case", created: "01/06/2026", user: "Sibandu Mukherjee", status: "Draft", documentType: "Employment Details Verification" },
-  { caseType: "Group Disability Claim", created: "01/06/2026", user: "Claimant", status: "Completed", documentType: "Intake Summary" },
-  { caseType: "Group Disability Claim", created: "01/06/2026", user: "Claimant", status: "Unknown", documentType: "QuestionPathClaim Eform", eform: "claim" },
-  { caseType: "Absence Case", created: "01/06/2026", user: "Claimant", status: "Unknown", documentType: "QuestionPathAbsence Eform", eform: "absence" },
+  { caseType: "STD Benefit", icon: "doc", created: "01/06/2026", user: "System Administrator", status: "Completed", documentType: "Policy Provisions Document", group: "Claim Forms", delivery: "Unknown", title: "Policy Provisions #00308641" },
+  { caseType: "STD Benefit", icon: "doc", created: "01/06/2026", user: "Total Leave Assist Adm", status: "Completed", documentType: "STD Earnings and Tax", description: "Automated STD Earnings and Tax", delivery: "Unknown" },
+  { caseType: "STD Benefit", icon: "doc", created: "01/06/2026", user: "John Smith", status: "Unknown", documentType: "Policy Info", delivery: "Unknown" },
+  { caseType: "Absence Case", icon: "pdf", created: "01/06/2026", user: "Sibandu Mukherjee", status: "Draft", documentType: "Employment Details Verification", delivery: "Unknown" },
+  { caseType: "Group Disability Claim", icon: "pdf", created: "01/06/2026", user: "Claimant", status: "Completed", documentType: "Intake Summary", description: "intake-summary.pdf", group: "System Generated", delivery: "Unknown", title: "Intake Summary" },
+  { caseType: "Absence Case", icon: "pdf", created: "01/06/2026", user: "Claimant", status: "Completed", documentType: "Intake Summary", description: "intake-summary.pdf", group: "System Generated", delivery: "Unknown", title: "Intake Summary" },
+  { caseType: "Group Disability Claim", icon: "pdf", created: "01/06/2026", user: "Claimant", status: "Unknown", documentType: "QuestionPathClaim Eform", delivery: "Unknown", eform: "claim" },
+  { caseType: "Absence Case", icon: "pdf", created: "01/06/2026", user: "Claimant", status: "Unknown", documentType: "QuestionPathAbsence Eform", delivery: "Unknown", eform: "absence" },
 ];
 
 export function DocumentsTab({ ctx }: { readonly ctx: PanelContext; readonly navigate: NavigateFunction }) {
@@ -30,6 +37,7 @@ export function DocumentsTab({ ctx }: { readonly ctx: PanelContext; readonly nav
   return <section><h2 className="fx-section-title">Documents For Case</h2>
     <DocumentFilters filters={filters} onFilters={setFilters} />
     <DocumentTable rows={rows} onOpen={setEform} />
+    <div className="fx-doc-table-foot"><span><i>↻</i><i>⟳</i><i>↗</i></span><span>1-8 of 8</span></div>
   </section>;
 }
 
@@ -42,6 +50,11 @@ interface DocumentFilters {
 const DEFAULT_FILTERS: DocumentFilters = {
   from: "11/07/2025", to: "02/05/2026", includeSubCases: true,
 };
+
+// ponytail: these filter toggles + the row/select-all checkboxes are decorative
+// (rendered disabled) to mirror the source screenshot without adding no-op
+// controls. Upgrade path: wire them to real document filtering/selection.
+const EXTRA_TOGGLES = ["Include Invoices", "Include Decisions", "Display Marked for Deletion"] as const;
 
 const initialFilters = (details: CaseDetailsView): DocumentFilters =>
   isDavidReference(details) ? DEFAULT_FILTERS : { from: "", to: "", includeSubCases: true };
@@ -69,7 +82,8 @@ const componentDocuments = (
 const generatedRow = (
   details: CaseDetailsView, caseType: string, documentType: string,
 ): DocumentRow => ({
-  caseType, documentType, created: displayDate(details.notification.notificationDate),
+  caseType, documentType, icon: "pdf", delivery: "Unknown",
+  created: displayDate(details.notification.notificationDate),
   user: details.claimant.fullName, status: "Completed",
 });
 
@@ -82,11 +96,19 @@ const receivedDocuments = (details: CaseDetailsView): readonly DocumentRow[] => 
 
 function DocumentFilters({ filters, onFilters }: { readonly filters: DocumentFilters; readonly onFilters: (filters: DocumentFilters) => void }) {
   const patch = (part: Partial<DocumentFilters>): void => onFilters({ ...filters, ...part });
-  return <div className="fx-doc-filters">
-    <FilterInput label="From" value={filters.from} onChange={(from) => patch({ from })} />
-    <FilterInput label="To" value={filters.to} onChange={(to) => patch({ to })} />
-    <label className="fx-checkbox"><input type="checkbox" checked={filters.includeSubCases}
-      onChange={(event) => patch({ includeSubCases: event.target.checked })} /><span>Include Sub-Cases</span></label>
+  return <div className="fx-doc-filterbar">
+    <div className="fx-doc-dates">
+      <FilterInput label="From" value={filters.from} onChange={(from) => patch({ from })} />
+      <FilterInput label="To" value={filters.to} onChange={(to) => patch({ to })} />
+      <button type="button" className="fx-ghost fx-doc-clear" onClick={() => patch({ from: "", to: "" })}>Clear</button>
+    </div>
+    <div className="fx-doc-toggles">
+      <label className="fx-checkbox"><input type="checkbox" checked={filters.includeSubCases}
+        onChange={(event) => patch({ includeSubCases: event.target.checked })} /><span>Include Sub-Cases</span></label>
+      {EXTRA_TOGGLES.map((label) => (
+        <label key={label} className="fx-checkbox"><input type="checkbox" disabled /><span>{label}</span></label>
+      ))}
+    </div>
   </div>;
 }
 
@@ -110,16 +132,25 @@ const sortableDate = (value: string): string => {
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 };
 
+const DOC_COLUMNS = ["Case Type", "Received / Created", "User Created", "Status", "Document Type", "Description", "Document Group", "Delivery Channel", "Title"] as const;
+
 function DocumentTable({ rows, onOpen }: { readonly rows: readonly DocumentRow[]; readonly onOpen: (kind: "claim" | "absence") => void }) {
-  return <table className="fx-table">
-    <thead><tr><th>Case Type</th><th>Received / Created</th><th>User Created</th><th>Status</th><th>Document Type</th></tr></thead>
-    <tbody>{rows.length === 0 ? <tr><td colSpan={5}>No documents match the selected filters.</td></tr>
-      : rows.map((row) => <DocumentRowView key={`${row.caseType}-${row.documentType}`} row={row} onOpen={onOpen} />)}</tbody>
+  return <table className="fx-table fx-doc-table">
+    <thead><tr><th className="fx-doc-check"><input type="checkbox" aria-label="Select all" disabled /></th>
+      {DOC_COLUMNS.map((label) => <th key={label} className="fx-doc-col">{label}</th>)}</tr></thead>
+    <tbody>{rows.length === 0 ? <tr><td colSpan={10}>No documents match the selected filters.</td></tr>
+      : rows.map((row, index) => <DocumentRowView key={`${row.documentType}-${index}`} row={row} onOpen={onOpen} />)}</tbody>
   </table>;
 }
 
 function DocumentRowView({ row, onOpen }: { readonly row: DocumentRow; readonly onOpen: (kind: "claim" | "absence") => void }) {
-  return <tr><td>{row.caseType}</td><td>{row.created}</td><td>{row.user}</td><td>{row.status}</td><td><DocumentLink row={row} onOpen={onOpen} /></td></tr>;
+  return <tr>
+    <td className="fx-doc-check"><input type="checkbox" aria-label={`Select ${row.documentType}`} disabled /></td>
+    <td><span className={`fx-doc-icon fx-doc-icon--${row.icon}`} aria-hidden="true" />{row.caseType}</td>
+    <td>{row.created}</td><td>{row.user}</td><td>{row.status}</td>
+    <td><DocumentLink row={row} onOpen={onOpen} /></td>
+    <td>{row.description ?? ""}</td><td>{row.group ?? ""}</td><td>{row.delivery}</td><td>{row.title ?? ""}</td>
+  </tr>;
 }
 
 function DocumentLink({ row, onOpen }: { readonly row: DocumentRow; readonly onOpen: (kind: "claim" | "absence") => void }) {
@@ -138,9 +169,9 @@ const REFERENCE_ANSWERS: readonly (readonly [string, string])[] = [
 
 function EformView({ kind, details, onBack }: { readonly kind: "claim" | "absence"; readonly details: CaseDetailsView; readonly onBack: () => void }) {
   const title = kind === "claim" ? "QuestionPathClaimEform" : "QuestionPathAbsenceEform";
-  return <section><div className="fx-subhead"><h2 className="fx-section-title">{title}</h2>
-    <button type="button" className="fx-ghost" onClick={onBack}>Back to Documents</button></div>
-    <EformAnswers details={details} />
+  return <section className="fx-eform-view"><h2 className="fx-section-title">{title}</h2>
+    <div className="fx-eform-frame"><strong>Questions</strong><EformAnswers details={details} /></div>
+    <div className="fx-eform-actions"><button type="button" className="fx-ghost" onClick={onBack}>Back to Documents</button></div>
   </section>;
 }
 
@@ -149,9 +180,9 @@ function EformView({ kind, details, onBack }: { readonly kind: "claim" | "absenc
 // answers on the notification and read them instead.
 function EformAnswers({ details }: { readonly details: CaseDetailsView }) {
   const answers = details.notification.id === "NTN-159898" ? REFERENCE_ANSWERS : derivedAnswers(details);
-  return <dl className="fx-eform">{answers.map(([q, a]) => (
-    <div key={q} className="fx-eform-row"><dt>{q}</dt><dd>{a}</dd></div>
-  ))}</dl>;
+  return <div className="fx-eform">{answers.map(([q, a]) => (
+    <p key={q}><strong>{q}:</strong> {a}</p>
+  ))}</div>;
 }
 
 const derivedAnswers = (details: CaseDetailsView): readonly (readonly [string, string])[] => [

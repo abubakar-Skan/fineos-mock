@@ -1,1 +1,1 @@
-{"id":"intake-s3-2","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"ratio":0.18086984126984126,"diffPixels":256383,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s3-2","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"ratio":0.08321092896174863,"diffPixels":114207,"comparedWidth":1500,"comparedHeight":945,"maskedPixels":45000}

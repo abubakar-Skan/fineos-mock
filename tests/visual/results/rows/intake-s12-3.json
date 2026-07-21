@@ -1,1 +1,1 @@
-{"id":"intake-s12-3","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source scrolled to Diagnosis Codes & Hospitalization section.","ratio":0.1852599647266314,"diffPixels":262606,"comparedWidth":1500,"comparedHeight":945}
+{"id":"intake-s12-3","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Diagnosis and hospitalization content region.","ratio":0.06959347826086956,"diffPixels":64026,"comparedWidth":1150,"comparedHeight":800,"maskedPixels":0}

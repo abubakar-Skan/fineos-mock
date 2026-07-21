@@ -1,1 +1,1 @@
-{"id":"intake-s1-0","flow":"intake","threshold":0.4,"passed":true,"sourceOnly":false,"note":"Source includes browser window/tab/URL chrome above AdminSuite.","ratio":0.11534684114253553,"diffPixels":163954,"comparedWidth":1545,"comparedHeight":920}
+{"id":"intake-s1-0","flow":"intake","threshold":0.1,"passed":true,"sourceOnly":false,"note":"Source includes browser window/tab/URL chrome above AdminSuite.","ratio":0.06517490470273572,"diffPixels":92841,"comparedWidth":1545,"comparedHeight":922,"maskedPixels":0}
