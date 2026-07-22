@@ -8,6 +8,7 @@ import type {
   PartyId,
   PartyProfileDetails,
   Process2Dossier,
+  Process2TargetState,
   RecentCaseRow,
   Submission,
 } from "@fineos/contracts";
@@ -97,6 +98,17 @@ export interface NotificationRecord {
   // Parsed from sections_json when it holds a persisted Process 2 dossier; the
   // scenario_json column is never read here so evaluator metadata stays private.
   readonly dossier: Process2Dossier | null;
+  // Parsed from target_state_json: the manually-persisted ACT_11-16 outputs,
+  // starting as {} and populated only through the target-state endpoints.
+  readonly targetState: Process2TargetState;
+}
+
+export interface TargetStateUpdate {
+  readonly notificationId: CaseId;
+  readonly patch: Partial<Process2TargetState>;
+  readonly gdcCaseId?: CaseId;
+  readonly diagnosisCode?: string | null;
+  readonly providerPartyId?: PartyId | null;
 }
 
 export interface SubmissionRecord {
@@ -164,6 +176,7 @@ export interface NotificationRepository {
   findById(id: CaseId): NotificationRecord | undefined;
   saveSection(id: CaseId, section: SectionSave): void;
   submit(id: CaseId, plan: Submission): DomainResult<SubmissionRecord, PersistenceError>;
+  updateTargetState(update: TargetStateUpdate): NotificationRecord | undefined;
 }
 
 export interface CaseRepository {

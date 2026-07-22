@@ -769,18 +769,12 @@ export const ntn159898Seed = {
           field("nameOfSurgery", "Name of Surgery or Procedure", "Knee Surgery"),
         ]),
       ],
-      diagnoses: [
-        {
-          level: "Primary",
-          type: "ICD-10-CM",
-          code: "O80",
-          description: "Encounter for full-term uncomplicated delivery",
-          severity: "N/A",
-          effectiveFrom: "N/A",
-          effectiveTo: "N/A",
-        },
-      ],
-      providers: [travisLarson],
+      // ACT_15/ACT_16 targets start empty: the diagnosis and provider below are
+      // manually persisted through the target-state endpoints, not seeded. The
+      // lookup candidates and providerSearch candidates above remain as source
+      // evidence for the manual entry.
+      diagnoses: [],
+      providers: [],
       providerSearch: {
         criteria: [
           field("first", "First Name", "Travis"),
@@ -822,13 +816,13 @@ export const ntn159898Seed = {
       endDate: "2026-03-09",
     },
   ],
+  // providerPartyId/diagnosisCode are omitted: ACT_15/ACT_16 targets are
+  // manually persisted through the target-state endpoints, not seeded.
   gdcCase: {
     id: gdcCaseId,
     notificationId,
     claimantPartyId: partyId,
     status: "OPEN",
-    providerPartyId: travisPartyId,
-    diagnosisCode: "O80",
   },
   providers: [
     {

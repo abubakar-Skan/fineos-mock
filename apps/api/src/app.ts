@@ -10,10 +10,12 @@ import {
 import { createPartyService } from "./application/party-service";
 import { createNotificationService } from "./application/notification-service";
 import { createExecutionService } from "./application/execution-service";
+import { createTargetStateService } from "./application/target-state-service";
 import { registerSessionRoutes } from "./boundary/session-routes";
 import { registerPartyRoutes } from "./boundary/party-routes";
 import { registerNotificationRoutes } from "./boundary/notification-routes";
 import { registerCaseRoutes } from "./boundary/case-routes";
+import { registerTargetStateRoutes } from "./boundary/target-state-routes";
 import { registerTestRoutes } from "./boundary/test-routes";
 
 interface AppOptions {
@@ -39,6 +41,7 @@ export const buildApp = (db: Db, options: AppOptions = {}): FastifyInstance => {
     createExecutionService({ notifications, cases, parties }),
     options.automationShortcutsEnabled ?? AUTOMATION_SHORTCUTS_ENABLED,
   );
+  registerTargetStateRoutes(app, createTargetStateService({ notifications, cases }));
   registerTestRoutes(app, options.resetTestData);
   if (options.webRoot) serveWebApp(app, options.webRoot);
   return app;

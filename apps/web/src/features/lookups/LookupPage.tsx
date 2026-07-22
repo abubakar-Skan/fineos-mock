@@ -21,7 +21,12 @@ const LOOKUP_FIELD: Record<string, keyof CaseLookup> = {
   "icd-chart": "chart",
 };
 
-type ContentState = LookupContent | "loading" | null;
+interface LookupState {
+  readonly content: LookupContent;
+  readonly lookup: CaseLookup;
+}
+
+type ContentState = LookupState | "loading" | null;
 
 export function LookupPage() {
   const { source } = useParams();
@@ -33,7 +38,7 @@ export function LookupPage() {
   if (!source || !(source in LOOKUP_FIELD)) return <Navigate to="/dashboard" replace />;
   return <div className={`fx-lookup fx-lookup--${source}`}>
     <LookupChrome title={LOOKUP_TITLES[source] ?? source} onBack={() => navigate(-1)} />
-    <LookupBody content={content} caseId={caseId} />
+    <LookupBody state={content} caseId={caseId} showEvidence={source === "uknow"} />
   </div>;
 }
 
@@ -45,7 +50,7 @@ const loadLookup = async (
   const field = source ? LOOKUP_FIELD[source] : undefined;
   if (!field || !caseId) return set(null);
   const result = await getCase(caseId);
-  set(result.ok ? result.value.dossier.lookup[field] as LookupContent : null);
+  set(result.ok ? { content: result.value.dossier.lookup[field] as LookupContent, lookup: result.value.dossier.lookup } : null);
 };
 
 function LookupChrome({ title, onBack }: { readonly title: string; readonly onBack: () => void }) {
@@ -55,16 +60,30 @@ function LookupChrome({ title, onBack }: { readonly title: string; readonly onBa
   </header>;
 }
 
-function LookupBody({ content, caseId }: { readonly content: ContentState; readonly caseId: string | null }) {
-  if (content === "loading") return <main className="fx-lookup-body"><p className="fx-loading">Loading…</p></main>;
-  if (!content) return <main className="fx-lookup-body"><p className="fx-empty-inline">No lookup content available.</p></main>;
+function LookupBody({ state, caseId, showEvidence }: { readonly state: ContentState; readonly caseId: string | null; readonly showEvidence: boolean }) {
+  if (state === "loading") return <main className="fx-lookup-body"><p className="fx-loading">Loading…</p></main>;
+  if (!state) return <main className="fx-lookup-body"><p className="fx-empty-inline">No lookup content available.</p></main>;
+  const { content, lookup } = state;
   return <main className="fx-lookup-body">
     <h1>{content.title}</h1>
     {content.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
     {content.panels.map((panel) => <LookupPanel key={panel.id} panel={panel} />)}
     {content.tables.map((table) => <LookupTable key={table.id} table={table} />)}
+    {showEvidence && <DiagnosisEvidence lookup={lookup} />}
     <LookupLinks links={content.links} caseId={caseId} />
   </main>;
+}
+
+function DiagnosisEvidence({ lookup }: { readonly lookup: CaseLookup }) {
+  return <><section className="fx-lookup-candidates"><h2 className="fx-section-title">Diagnosis Candidates</h2>
+    <table className="fx-table"><tbody>{lookup.candidates.map((candidate) =>
+      <tr key={candidate.code}><td>{candidate.code}</td><td>{candidate.description}</td></tr>)}</tbody></table>
+  </section>
+  <section className="fx-lookup-evidence"><h2 className="fx-section-title">Diagnosis Evidence</h2>
+    <table className="fx-table"><tbody>{lookup.evidence.map((evidence) =>
+      <tr key={evidence.id}><td>{evidence.id}</td><td>{evidence.source}</td><td>{evidence.excerpt}</td>
+        <td>{evidence.supportedCodes.join(", ")}</td></tr>)}</tbody></table>
+  </section></>;
 }
 
 function LookupPanel({ panel }: { readonly panel: DossierPanel }) {

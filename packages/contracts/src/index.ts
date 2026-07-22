@@ -3,6 +3,7 @@ export * from "./party";
 export * from "./notification";
 export * from "./case-execution";
 export * from "./case-dossier";
+export * from "./target-state";
 export * from "./api-errors";
 export * from "./intake-sections";
 export * from "./feature-flags";

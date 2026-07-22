@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { DiagnosisCandidate, DiagnosisEntry } from "@fineos/contracts";
+import type { DiagnosisCandidate } from "@fineos/contracts";
+import { updateDiagnosis } from "../../app/api";
 import { SelectField } from "../intake/fields/controls";
 import type { PanelContext } from "./CasePage";
-import { ICD_CODES, type IcdCode } from "./diagnosis-codes";
 
 const LEVELS = ["Primary", "Secondary", "Contributing"];
 const DEFAULT_TYPE = "ICD-10-CM";
@@ -19,35 +19,37 @@ interface DiagnosisRow {
   readonly effectiveTo: string;
 }
 
-const seededRows = (diagnoses: readonly DiagnosisEntry[] | undefined): readonly DiagnosisRow[] =>
-  (diagnoses ?? []).map((entry) => ({ ...entry }));
-
-const rowFromCode = (entry: IcdCode, level: string): DiagnosisRow => ({
-  level, type: DEFAULT_TYPE, code: entry.code, description: entry.description,
-  severity: NOT_APPLICABLE, effectiveFrom: NOT_APPLICABLE, effectiveTo: NOT_APPLICABLE,
-});
-
+// ACT_15 target: the case's own dossier.lookup.candidates are the only
+// suggestion source (no shared ICD-10 fallback table). Saving is the
+// persisted target-state PATCH, not local-only state, so the table always
+// reflects what a reload would show.
 export function DiagnosisPanel({ ctx }: { readonly ctx: PanelContext }) {
-  const diagnoses = ctx.details.dossier.gdc?.diagnoses;
-  const [rows, setRows] = useState<readonly DiagnosisRow[]>(() => seededRows(diagnoses));
   const [level, setLevel] = useState("Primary");
-  useEffect(() => {
-    setRows(seededRows(ctx.details.dossier.gdc?.diagnoses));
-    setLevel("Primary");
-  }, [ctx.rootId, ctx.details.dossier.gdc?.diagnoses]);
-  const add = (entry: IcdCode): void => addDiagnosis(entry, level, ctx, rows, setRows);
+  const [error, setError] = useState<string | null>(null);
+  const save = (code: string): void => void saveDiagnosis(ctx, code, setError);
   return <section><h2 className="fx-section-title">Diagnosis Codes</h2>
-    <DiagnosisEntryRow level={level} caseId={ctx.rootId} candidates={ctx.details.dossier.lookup.candidates} onLevel={setLevel} onAdd={add} />
-    <DiagnosisTable rows={rows} />
+    <DiagnosisEntryRow level={level} caseId={ctx.rootId} candidates={ctx.details.dossier.lookup.candidates} onLevel={setLevel} onSave={save} />
+    {error && <p role="alert" className="fx-error">{error}</p>}
+    <DiagnosisTable rows={savedRows(ctx)} />
   </section>;
 }
 
-const addDiagnosis = (
-  entry: IcdCode, level: string, ctx: PanelContext,
-  rows: readonly DiagnosisRow[], setRows: (rows: readonly DiagnosisRow[]) => void,
-): void => {
-  setRows([...rows, rowFromCode(entry, level)]);
-  ctx.workflow.setDiagnosis(entry.code);
+const saveDiagnosis = async (
+  ctx: PanelContext, code: string, setError: (message: string | null) => void,
+): Promise<void> => {
+  const result = await updateDiagnosis(ctx.rootId, code);
+  if (!result.ok) return setError(result.message);
+  setError(null);
+  await ctx.refresh();
+};
+
+const savedRows = (ctx: PanelContext): readonly DiagnosisRow[] => {
+  const diagnosis = ctx.details.targetState.diagnosis;
+  if (!diagnosis?.updated) return [];
+  return [{
+    level: "Primary", type: DEFAULT_TYPE, code: diagnosis.value.code, description: diagnosis.value.description,
+    severity: NOT_APPLICABLE, effectiveFrom: NOT_APPLICABLE, effectiveTo: NOT_APPLICABLE,
+  }];
 };
 
 interface EntryProps {
@@ -55,46 +57,42 @@ interface EntryProps {
   readonly caseId: string;
   readonly candidates: readonly DiagnosisCandidate[];
   readonly onLevel: (value: string) => void;
-  readonly onAdd: (entry: IcdCode) => void;
+  readonly onSave: (code: string) => void;
 }
 
-function DiagnosisEntryRow({ level, caseId, candidates, onLevel, onAdd }: EntryProps) {
+function DiagnosisEntryRow({ level, caseId, candidates, onLevel, onSave }: EntryProps) {
   return <div className="fx-diagnosis-entry">
-    <TypeAhead candidates={candidates} onAdd={onAdd} />
+    <TypeAhead candidates={candidates} onSave={onSave} />
     <SelectField label="Level Indicator" options={LEVELS} value={level} onChange={onLevel} />
     <Link className="fx-link" to={`/lookups/uknow?case=${encodeURIComponent(caseId)}`}>Look up ICD-10 code</Link>
   </div>;
 }
 
-// Suggestions merge the case's dossier.lookup candidates with the shared
-// platform ICD-10 table so both the captured evidence codes and generic
-// codes resolve, deduped by code.
-const suggestionPool = (candidates: readonly DiagnosisCandidate[]): readonly IcdCode[] => {
-  const pool = new Map<string, IcdCode>();
-  for (const candidate of candidates) pool.set(candidate.code, { code: candidate.code, description: candidate.description });
-  for (const entry of ICD_CODES) if (!pool.has(entry.code)) pool.set(entry.code, entry);
-  return [...pool.values()];
-};
+// A code typed as "CODE - description" saves just the leading code; the
+// endpoint re-validates against dossier.lookup.candidates either way.
+const codeFromQuery = (query: string): string => query.split(" - ")[0]!.trim();
 
-function TypeAhead({ candidates, onAdd }: { readonly candidates: readonly DiagnosisCandidate[]; readonly onAdd: (entry: IcdCode) => void }) {
+function TypeAhead({ candidates, onSave }: { readonly candidates: readonly DiagnosisCandidate[]; readonly onSave: (code: string) => void }) {
   const [query, setQuery] = useState("");
   const matches = suggestions(query, candidates);
+  const submit = (): void => { onSave(codeFromQuery(query)); setQuery(""); };
   return <div className="fx-typeahead">
     <label className="fx-field"><span className="fx-field-label">Diagnosis code or description</span>
       <input className="fx-input" role="combobox" aria-expanded={matches.length > 0} aria-controls="fx-diagnosis-listbox"
-        value={query} onChange={(event) => setQuery(event.target.value)} />
+        value={query} onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Enter" && query.trim().length > 0) submit(); }} />
     </label>
-    {matches.length > 0 && <Suggestions matches={matches} onPick={(entry) => { onAdd(entry); setQuery(""); }} />}
+    {matches.length > 0 && <Suggestions matches={matches} onPick={(entry) => { onSave(entry.code); setQuery(""); }} />}
   </div>;
 }
 
-const suggestions = (query: string, candidates: readonly DiagnosisCandidate[]): readonly IcdCode[] => {
+const suggestions = (query: string, candidates: readonly DiagnosisCandidate[]): readonly DiagnosisCandidate[] => {
   const term = query.trim().toLowerCase();
   if (term.length === 0) return [];
-  return suggestionPool(candidates).filter((entry) => `${entry.code} ${entry.description}`.toLowerCase().includes(term));
+  return candidates.filter((entry) => `${entry.code} ${entry.description}`.toLowerCase().includes(term));
 };
 
-function Suggestions({ matches, onPick }: { readonly matches: readonly IcdCode[]; readonly onPick: (entry: IcdCode) => void }) {
+function Suggestions({ matches, onPick }: { readonly matches: readonly DiagnosisCandidate[]; readonly onPick: (entry: DiagnosisCandidate) => void }) {
   return <ul id="fx-diagnosis-listbox" role="listbox" className="fx-suggestions">
     {matches.map((entry) => (
       <li key={entry.code} role="option" aria-selected="false">

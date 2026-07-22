@@ -427,17 +427,10 @@ const medicalDetailsPanels = (): readonly DossierPanel[] => [
   },
 ];
 
-const gdcDiagnoses = (): readonly DiagnosisEntry[] => [
-  {
-    level: "Primary",
-    type: "ICD-10-CM",
-    code: PRIMARY_DIAGNOSIS_CODE,
-    description: "Pain in right knee",
-    severity: "Unknown",
-    effectiveFrom: "2026-02-24",
-    effectiveTo: "2026-02-24",
-  },
-];
+// ACT_15 target starts empty: the diagnosis below is manually persisted
+// through the target-state endpoint, not seeded. dossier.lookup.candidates
+// (including PRIMARY_DIAGNOSIS_CODE) remains as source evidence for entry.
+const gdcDiagnoses = (): readonly DiagnosisEntry[] => [];
 
 const travisCertifications = () => [
   { group: "Unknown", type: "Unknown", status: "Active", effectiveFrom: "2026-01-29" },
@@ -593,12 +586,13 @@ export const ntn170002Seed: Process2CaseSeed = {
       activatedTracks: ["gdc"],
     },
   },
+  // diagnosisCode is omitted: the ACT_15 target is manually persisted through
+  // the target-state endpoint, not seeded.
   gdcCase: {
     id: GDC_CASE_ID,
     notificationId: CASE_ID,
     claimantPartyId: CARLA_PARTY_ID,
     status: "OPEN",
-    diagnosisCode: PRIMARY_DIAGNOSIS_CODE,
   },
   providers: [travisPartySeedRow()],
 };

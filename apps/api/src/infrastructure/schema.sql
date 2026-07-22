@@ -26,7 +26,8 @@ CREATE TABLE notification (
   diagnosis_code TEXT,
   provider_party_id TEXT REFERENCES party(id),
   status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SUBMITTED')),
-  scenario_json TEXT NOT NULL DEFAULT '{}'
+  scenario_json TEXT NOT NULL DEFAULT '{}',
+  target_state_json TEXT NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE absence_case (

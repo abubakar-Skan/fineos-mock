@@ -43,7 +43,7 @@ const ERICA: PartyValues = {
 const INSERT_PARTY =
   "INSERT INTO party(id, customer_number, full_name, party_type, date_of_birth, employer, phone, home_phone, email, details_json) VALUES (?,?,?,?,?,?,?,?,?,?)";
 const INSERT_NOTIFICATION =
-  "INSERT INTO notification(id, party_id, source, notification_date, scope, sections_json, intake_type, leave_reason, condition_description, work_state, absence_periods_json, diagnosis_code, provider_party_id, status, scenario_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+  "INSERT INTO notification(id, party_id, source, notification_date, scope, sections_json, intake_type, leave_reason, condition_description, work_state, absence_periods_json, diagnosis_code, provider_party_id, status, scenario_json, target_state_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 const INSERT_ABSENCE_CASE =
   "INSERT INTO absence_case(id, notification_id, employee_party_id, leave_reason, condition_description, work_state, status) VALUES (?,?,?,?,?,?,?)";
 const INSERT_ABSENCE_PERIOD =
@@ -89,6 +89,9 @@ const partyTuple = (party: PartyValues): readonly unknown[] => [
   orNull(party.homePhone), orNull(party.email), JSON.stringify(party.details),
 ];
 
+// target_state_json always seeds as "{}": ACT_11-16 outputs are manually
+// persisted by the UI/API rather than pre-filled, even for scenarios whose
+// source dossier and gdc_case already carry evidence for those activities.
 const notificationTuple = (seed: Process2CaseSeed): readonly unknown[] => {
   const { notification, absenceCase, gdcCase } = seed;
   return [
@@ -97,7 +100,7 @@ const notificationTuple = (seed: Process2CaseSeed): readonly unknown[] => {
     orNull(absenceCase?.leaveReason), orNull(absenceCase?.conditionDescription),
     orNull(absenceCase?.workState), periodsJson(seed.absencePeriods),
     orNull(gdcCase?.diagnosisCode), orNull(gdcCase?.providerPartyId),
-    notification.status, JSON.stringify(seed.scenario),
+    notification.status, JSON.stringify(seed.scenario), "{}",
   ];
 };
 

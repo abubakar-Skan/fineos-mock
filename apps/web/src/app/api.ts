@@ -1,12 +1,20 @@
 import type {
+  AbsenceConditionTargetState,
+  AbsenceHubTargetState,
   ApiErrorCode,
   ApiResult,
+  GdcClaimTargetState,
+  GdcMedicalTargetState,
   PartyProfileDetails,
   Process2Dossier,
+  Process2TargetState,
   RecentCaseRow,
 } from "@fineos/contracts";
 
-export type { PartyProfileDetails, Process2Dossier, RecentCaseRow };
+export type {
+  AbsenceConditionTargetState, AbsenceHubTargetState, GdcClaimTargetState,
+  GdcMedicalTargetState, PartyProfileDetails, Process2Dossier, Process2TargetState, RecentCaseRow,
+};
 
 export interface SessionView {
   readonly token: string;
@@ -146,6 +154,7 @@ export interface GdcCaseView {
 
 export interface CaseDetailsView {
   readonly dossier: Process2Dossier;
+  readonly targetState: Process2TargetState;
   readonly notification: NotificationDetailView;
   readonly absence?: AbsenceCaseView;
   readonly gdc?: GdcCaseView;
@@ -181,3 +190,23 @@ export const executeCase = (id: string, input: ExecuteInput): Promise<Result<Exe
 
 export const getExecutionRun = (id: string, runId: string): Promise<Result<{ readonly id: string; readonly status: string }>> =>
   get(`/cases/${query(id)}/execution-runs/${query(runId)}`);
+
+// Granular, always-available manual target-state saves for ACT_11-16 — never
+// gated behind the automation-shortcuts flag.
+export const updateAbsenceHub = (id: string, payload: AbsenceHubTargetState): Promise<Result<Process2TargetState>> =>
+  send(`/cases/${query(id)}/absence-hub`, "PATCH", payload);
+
+export const updateAbsenceCondition = (id: string, payload: AbsenceConditionTargetState): Promise<Result<Process2TargetState>> =>
+  send(`/cases/${query(id)}/absence-condition`, "PATCH", payload);
+
+export const updateGdcClaim = (id: string, payload: GdcClaimTargetState): Promise<Result<Process2TargetState>> =>
+  send(`/cases/${query(id)}/gdc-claim`, "PATCH", payload);
+
+export const updateGdcMedical = (id: string, payload: GdcMedicalTargetState): Promise<Result<Process2TargetState>> =>
+  send(`/cases/${query(id)}/gdc-medical`, "PATCH", payload);
+
+export const updateDiagnosis = (id: string, code: string): Promise<Result<Process2TargetState>> =>
+  send(`/cases/${query(id)}/diagnosis`, "PATCH", { code });
+
+export const updateProvider = (id: string, providerPartyId: string): Promise<Result<Process2TargetState>> =>
+  send(`/cases/${query(id)}/provider`, "PATCH", { providerPartyId });

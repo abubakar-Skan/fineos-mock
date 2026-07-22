@@ -17,6 +17,7 @@ import {
   type LeaveReason,
   type PartyId,
   type Process2Dossier,
+  type Process2TargetState,
   type RecentCaseRow,
 } from "@fineos/contracts";
 import { executeCase } from "../domain/case-execution";
@@ -85,6 +86,7 @@ export interface CaseNotificationView {
 
 export interface CaseDetails {
   readonly dossier: Process2Dossier;
+  readonly targetState: Process2TargetState;
   readonly notification: CaseNotificationView;
   readonly absence: AbsenceCaseRecord | undefined;
   readonly gdc: GdcCaseRecord | undefined;
@@ -136,6 +138,7 @@ const caseDetails = (
   components: ComponentCases, claimant: PartyRecord,
 ): CaseDetails => ({
   dossier: notification.dossier ?? synthesizeDossier(notification, components, claimant),
+  targetState: notification.targetState,
   notification: notificationView(notification),
   claimant, absence: components.absence, gdc: components.gdc,
   provider: findProvider(deps, components.gdc),

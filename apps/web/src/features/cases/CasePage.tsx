@@ -40,6 +40,7 @@ export interface PanelContext {
   readonly workflow: CaseWorkflow;
   readonly choosing: boolean;
   readonly setChoosing: (value: boolean) => void;
+  readonly refresh: () => Promise<CaseDetailsView | null>;
 }
 
 type DetailsState = "loading" | "not_found" | CaseDetailsView;
@@ -99,7 +100,7 @@ function CaseRecord({ caseId, slug, details, refresh }: { readonly caseId: strin
       : tab === "Medical" ? "Medical Details" : undefined;
   return <RecordShell {...shellProps(caseId, kind, details, tab, navigate, workflow)} chromeless={chooseHere}
     processTitle={processTitle}>
-    <CaseBody ctx={{ caseId, rootId: rootCaseId(caseId), view: slug, details, workflow, choosing, setChoosing }} kind={kind} tab={tab} navigate={navigate} />
+    <CaseBody ctx={{ caseId, rootId: rootCaseId(caseId), view: slug, details, workflow, choosing, setChoosing, refresh }} kind={kind} tab={tab} navigate={navigate} />
   </RecordShell>;
 }
 

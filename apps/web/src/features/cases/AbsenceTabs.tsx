@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type {
   AbsenceCalendar,
@@ -8,8 +8,13 @@ import type {
   LeaveRequest,
   ReturnToWorkDetails,
 } from "@fineos/contracts";
+import {
+  updateAbsenceCondition, updateAbsenceHub,
+  type AbsenceConditionTargetState, type AbsenceHubTargetState,
+} from "../../app/api";
+import { TextField } from "../intake/fields/controls";
 import type { PanelContext } from "./CasePage";
-import { FieldView, PanelList } from "./dossier-ui";
+import { FieldView, PanelList, TargetSaveError, useTargetSave } from "./dossier-ui";
 
 export function AbsenceHub({ ctx }: { readonly ctx: PanelContext }) {
   const absence = ctx.details.dossier.absence;
@@ -17,7 +22,35 @@ export function AbsenceHub({ ctx }: { readonly ctx: PanelContext }) {
   return <section className="fx-absence-hub">
     <AbsenceSummary hub={absence.hub} />
     <AbsenceCalendarView calendar={absence.hub.calendar} />
+    <AbsenceHubTargetForm ctx={ctx} />
   </section>;
+}
+
+const BLANK_ABSENCE_HUB: AbsenceHubTargetState = {
+  expectedReturnToWorkDate: "", actualReturnToWorkDate: "", intentionToReturn: "",
+};
+
+// ACT_11 target: a blank editable form saved through the manual absence-hub
+// endpoint, distinct from the read-only source Return To Work summary above.
+function AbsenceHubTargetForm({ ctx }: { readonly ctx: PanelContext }) {
+  const saved = ctx.details.targetState.absenceHub?.value;
+  const [form, setForm] = useState(saved ?? BLANK_ABSENCE_HUB);
+  useEffect(() => setForm(saved ?? BLANK_ABSENCE_HUB), [ctx.rootId, saved]);
+  const { saving, error, run } = useTargetSave(
+    (payload: AbsenceHubTargetState) => updateAbsenceHub(ctx.rootId, payload), ctx.refresh,
+  );
+  return <div className="fx-hub-panel"><h2 className="fx-section-title">⊖ Absence Hub — Target (ACT_11)</h2>
+    <TextField label="Expected Return To Work Date" value={form.expectedReturnToWorkDate}
+      onChange={(value) => setForm({ ...form, expectedReturnToWorkDate: value })} />
+    <TextField label="Actual Return To Work Date" value={form.actualReturnToWorkDate}
+      onChange={(value) => setForm({ ...form, actualReturnToWorkDate: value })} />
+    <TextField label="Intend To Return To Work" value={form.intentionToReturn}
+      onChange={(value) => setForm({ ...form, intentionToReturn: value })} />
+    <div className="fx-form-actions">
+      <button type="button" className="fx-primary" disabled={saving} onClick={() => void run(form)}>Save</button>
+    </div>
+    <TargetSaveError message={error} />
+  </div>;
 }
 
 function AbsenceMissing() {
@@ -64,7 +97,7 @@ export function LeaveDetails({ ctx }: { readonly ctx: PanelContext }) {
     <div className="fx-detail-grid"><PanelList panels={absence.leavePanels} /></div>
     <LeaveRequests requests={absence.leaveRequests} />
     <LeavePlans plans={absence.leavePlans} caseId={ctx.caseId} />
-    <ConditionDetails condition={absence.condition} />
+    <ConditionDetails ctx={ctx} condition={absence.condition} />
   </section>;
 }
 
@@ -99,10 +132,37 @@ function LeavePlans({ plans, caseId }: { readonly plans: readonly LeavePlan[]; r
   </div>;
 }
 
-function ConditionDetails({ condition }: { readonly condition: AbsenceConditionDetails }) {
+function ConditionDetails({ ctx, condition }: { readonly ctx: PanelContext; readonly condition: AbsenceConditionDetails }) {
   const [open, setOpen] = useState(false);
   return <div className="fx-condition"><div className="fx-subhead"><h3 className="fx-section-title">Condition Details</h3>
     <button type="button" className="fx-ghost" aria-expanded={open} onClick={() => setOpen((value) => !value)}>Condition</button></div>
     {open && <div className="fx-detail-grid">{condition.fields.map((field) => <FieldView key={field.key} field={field} />)}</div>}
+    <AbsenceConditionTargetForm ctx={ctx} />
+  </div>;
+}
+
+const BLANK_ABSENCE_CONDITION: AbsenceConditionTargetState = {
+  leaveReason: "", workState: "", conditionDescription: "",
+};
+
+// ACT_12 target: a blank editable form saved through the manual
+// absence-condition endpoint; the source `condition.fields` above stay as
+// read-only labels/evidence and are never used to prefill this form.
+function AbsenceConditionTargetForm({ ctx }: { readonly ctx: PanelContext }) {
+  const saved = ctx.details.targetState.absenceCondition?.value;
+  const [form, setForm] = useState(saved ?? BLANK_ABSENCE_CONDITION);
+  useEffect(() => setForm(saved ?? BLANK_ABSENCE_CONDITION), [ctx.rootId, saved]);
+  const { saving, error, run } = useTargetSave(
+    (payload: AbsenceConditionTargetState) => updateAbsenceCondition(ctx.rootId, payload), ctx.refresh,
+  );
+  return <div className="fx-condition-target"><h3 className="fx-section-title">Condition — Target (ACT_12)</h3>
+    <TextField label="Leave Reason" value={form.leaveReason} onChange={(value) => setForm({ ...form, leaveReason: value })} />
+    <TextField label="Work State" value={form.workState} onChange={(value) => setForm({ ...form, workState: value })} />
+    <TextField label="Condition Description" value={form.conditionDescription}
+      onChange={(value) => setForm({ ...form, conditionDescription: value })} />
+    <div className="fx-form-actions">
+      <button type="button" className="fx-primary" disabled={saving} onClick={() => void run(form)}>Save</button>
+    </div>
+    <TargetSaveError message={error} />
   </div>;
 }

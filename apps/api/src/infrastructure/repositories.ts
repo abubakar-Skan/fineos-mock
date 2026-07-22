@@ -11,6 +11,7 @@ import {
   type IntakeType,
   type PartyProfileDetails,
   type Process2Dossier,
+  type Process2TargetState,
   type RecentCaseRow,
   type Submission,
 } from "@fineos/contracts";
@@ -36,6 +37,7 @@ import type {
   RunStatus,
   SectionSave,
   SubmissionRecord,
+  TargetStateUpdate,
 } from "../application/ports";
 import type { Db } from "./database";
 
@@ -76,6 +78,7 @@ interface NotificationRow {
   diagnosis_code: string | null;
   provider_party_id: string | null;
   status: "DRAFT" | "SUBMITTED";
+  target_state_json: string;
 }
 
 interface AbsenceCaseRow {
@@ -125,6 +128,7 @@ export const createNotificationRepository = (db: Db): NotificationRepository => 
   findById: (id) => findNotification(db, id),
   saveSection: (id, section) => db.transaction(() => saveSection(db, id, section))(),
   submit: (id, plan) => db.transaction(() => runSubmit(db, id, plan))(),
+  updateTargetState: (update) => db.transaction(() => applyTargetStateUpdate(db, update))(),
 });
 
 export const createCaseRepository = (db: Db): CaseRepository => ({
@@ -296,6 +300,26 @@ const SECTION_WRITERS: Readonly<Record<string, SectionWriter | undefined>> = {
   diagnosis: saveDiagnosis,
   medicalDetails: saveMedicalDetails,
   medicalProvider: saveMedicalProvider,
+};
+
+// Atomically merges one activity's target-state patch into target_state_json
+// and, when the activity owns a gdc_case column (diagnosis/provider), updates
+// it in the same transaction so execution and the manual UI stay consistent.
+const applyTargetStateUpdate = (db: Db, update: TargetStateUpdate): NotificationRecord | undefined => {
+  const notification = findNotification(db, update.notificationId);
+  if (!notification) return undefined;
+  const merged: Process2TargetState = { ...notification.targetState, ...update.patch };
+  db.prepare("UPDATE notification SET target_state_json = ? WHERE id = ?")
+    .run(JSON.stringify(merged), update.notificationId);
+  applyGdcTargetColumns(db, update);
+  return findNotification(db, update.notificationId);
+};
+
+const applyGdcTargetColumns = (db: Db, update: TargetStateUpdate): void => {
+  if (!update.gdcCaseId) return;
+  db.prepare(
+    "UPDATE gdc_case SET diagnosis_code = COALESCE(?, diagnosis_code), provider_party_id = COALESCE(?, provider_party_id) WHERE id = ?",
+  ).run(update.diagnosisCode ?? null, update.providerPartyId ?? null, update.gdcCaseId);
 };
 
 const runSubmit = (
@@ -470,6 +494,9 @@ const parseDossier = (json: string): Process2Dossier | null => {
   return value && "caseId" in value && "summary" in value ? (value as unknown as Process2Dossier) : null;
 };
 
+const parseTargetState = (json: string): Process2TargetState =>
+  (safeParse(json) as Process2TargetState | null) ?? {};
+
 const safeParse = (json: string): Record<string, unknown> | null => {
   const value = JSON.parse(json) as unknown;
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
@@ -498,6 +525,7 @@ const toNotification = (row: NotificationRow): NotificationRecord => ({
   providerPartyId: row.provider_party_id ? toPartyId(row.provider_party_id) : undefined,
   status: row.status,
   dossier: parseDossier(row.sections_json),
+  targetState: parseTargetState(row.target_state_json),
 });
 
 const toDraftScope = (scope: IntakeComponentScope | null): DraftComponentScope =>
