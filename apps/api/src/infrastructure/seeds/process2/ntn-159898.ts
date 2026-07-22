@@ -12,10 +12,8 @@ import {
 } from "@fineos/contracts";
 import type { Process2CaseSeed } from "./types";
 
-// David Hunter / ACEDEX / NTN-159898 case-execution reference. Every value is
-// transcribed from the two walkthrough sources and the Process 2 AOP; the knee
-// narrative paired with diagnosis O80 is a known source inconsistency and is
-// preserved verbatim rather than "corrected".
+// David Hunter / ACEDEX / NTN-159898 case-execution reference. Source evidence
+// is populated, while ACT_15/ACT_16 outputs start empty for the agent to enter.
 
 const field = (key: string, label: string, value: string, route?: string): DossierField =>
   route ? { key, label, value, route } : { key, label, value };
@@ -23,11 +21,9 @@ const field = (key: string, label: string, value: string, route?: string): Dossi
 const panel = (id: string, title: string, fields: readonly DossierField[]): DossierPanel =>
   ({ id, title, fields });
 
-// createDiagnosisCode is the branded factory for DiagnosisCode; "O80" is a
-// constant so this guard can only fail if the contract's rule changes.
-const diagnosis = createDiagnosisCode("O80");
+const diagnosis = createDiagnosisCode("M25.561");
 if (!diagnosis.ok) throw new Error(diagnosis.error.message);
-const o80Code = diagnosis.value;
+const expectedDiagnosisCode = diagnosis.value;
 
 const partyId = toPartyId("PTY-77569");
 const travisPartyId = toPartyId("PTY-TRAVIS");
@@ -112,6 +108,7 @@ const eFormAnswers = [
   { question: "Reason Qualifier1", answer: "Not Work Related" },
   { question: "Reason Qualifier2", answer: "Sickness" },
   { question: "Please provide the name of your surgery or procedure", answer: "Knee Surgery" },
+  { question: "Medical Provider", answer: "Travis Larson" },
 ] as const;
 
 const tasks = [
@@ -569,8 +566,8 @@ export const ntn159898Seed = {
         {
           id: "ev-icd10data",
           source: "ICD10Data.com",
-          excerpt: "Free reference website for fast lookup of all current American ICD-10-CM diagnosis codes.",
-          supportedCodes: [],
+          excerpt: "M25.561 is the ICD-10-CM diagnosis code for pain in the right knee.",
+          supportedCodes: ["M25.561"],
           route: "/lookups/icd10data",
         },
       ],
@@ -752,10 +749,10 @@ export const ntn159898Seed = {
         field("actual", "Actual return to work date", "-"),
       ]),
       medicalSummary: panel("medical-summary", "Medical", [
-        field("provider", "Provider", "Dhanraj VI"),
+        field("provider", "Provider", "-"),
         field("firstTreatment", "Date of First Treatment", "01/07/2026"),
         field("lifeExpectancy", "Life Expectancy", "Unknown"),
-        field("diagnosis", "Diagnosis", "O80: Encounter for full-term uncomplicated delivery"),
+        field("diagnosis", "Diagnosis", "-"),
       ]),
       medicalPanels: [
         panel("medical-details", "Medical Details", [
@@ -795,7 +792,7 @@ export const ntn159898Seed = {
     scenarioId: "NTN-159898",
     title: "David Hunter — leave and GDC intake with both components activated",
     decisions: { DEC_01: "yes", DEC_02: "yes", DEC_03: "yes", DEC_04: "yes", DEC_05: "yes" },
-    logic: { LGC_01: "absence_and_gdc", LGC_02: o80Code, LGC_03: condition },
+    logic: { LGC_01: "absence_and_gdc", LGC_02: expectedDiagnosisCode, LGC_03: condition },
     terminal: { kind: "completed", status: "COMPLETED", activatedTracks: ["absence", "gdc"] },
   },
   absenceCase: {
