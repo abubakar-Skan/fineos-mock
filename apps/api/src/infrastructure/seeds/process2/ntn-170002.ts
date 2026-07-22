@@ -374,6 +374,7 @@ const incidentPanel = (): DossierPanel => ({
   id: "incident",
   title: "Incident",
   fields: [
+    { key: "lastDayWorked", label: "Last Day Worked", value: "02/23/2026" },
     { key: "accidentSickness", label: "Accident/Sickness", value: "Sickness" },
     { key: "dateOfIncident", label: "Date of Incident", value: "02/20/2026" },
     { key: "dateFirstUnableToWork", label: "Date First Unable to Work", value: "Not applicable — no work stoppage" },
